@@ -1,0 +1,35 @@
+[project]
+name = "llmse6"
+version = "0.1.0"
+authors = [
+    {name="fangzhen", email="fangzhen@live.com"},
+]
+description = "LLM-based Software Engineering Agents"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "configargparse>=1.7",
+    "prompt-toolkit>=3.0",
+    "pyyaml>=6.0",
+    "simplellm",
+]
+[project.urls]
+Homepage = "https://github.com/fangzhen/llmse6"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+llmse6 = ["agents/metadata/*"]
+
+[tool.uv.sources]
+simplellm = { path = "../simplellm", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+]

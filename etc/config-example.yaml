@@ -1,0 +1,13 @@
+# Configuration for the product manager agent
+model: deepseek/deepseek-chat
+
+# API keys and configuration
+langfuse_public_key: pk-lf-xxxx
+langfuse_secret_key: sk-lf-xxxx
+langfuse_host: http://localhost:3000/
+
+# API keys in provider=key format
+api-key:
+  - deepseek=sk-xxx
+  - openrouter=sk-xxxx
+  - tavily=tvly-xxxx

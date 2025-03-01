@@ -1,0 +1,4 @@
+#! /bin/sh
+uvx ruff check --extend-select=I --fix --unsafe-fixes --preview --silent
+uvx ruff format
+uvx ruff check --select=E9,F821,F823,F406,F407,F701,F702,F704,F706
