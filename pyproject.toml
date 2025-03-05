@@ -12,7 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "configargparse>=1.7",
+    "tomli",
     "prompt-toolkit>=3.0",
     "pyyaml>=6.0",
     "simplellm",
@@ -28,6 +28,9 @@ llmse6 = ["agents/metadata/*"]
 
 [tool.uv.sources]
 simplellm = { path = "../simplellm", editable = true }
+
+[tool.pyright]
+extraPaths = ["../simplellm/"]
 
 [dependency-groups]
 dev = [

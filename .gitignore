@@ -4,7 +4,7 @@ __pycache__
 __verbose_out__
 dist/
 *.egg-info/
-.llmse6_history
+.llmse6*
 .coverage
 .tox
 .venv

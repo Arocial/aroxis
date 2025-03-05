@@ -3,14 +3,10 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List
 
-import yaml
 from simplellm.client import LLMClient
 from typing_extensions import TypedDict
 
-from llmse6 import commands
-from llmse6.config import get_config
-
-args = get_config()
+from llmse6 import agents, commands
 
 
 class BaseState(TypedDict):
@@ -18,47 +14,29 @@ class BaseState(TypedDict):
 
 
 class LLMBaseAgent:
-    agent_metadata_file = ""
+    def __init__(self, name, config_parser):
+        agents.init(config_parser)
 
-    def __init__(self, global_conf, workspace=None):
-        self.global_conf = global_conf
+        agent_group = config_parser.add_argument_group(name=f"agent.{name}")
+        agent_group.add_argument("system_prompt", default="")
+        config_parser.add_argument_group(
+            name=f"agent.{name}.model_params", expose_raw=True
+        )
+        config = config_parser.parse_args()
+
         self.commands = [commands.AddCommand(self), commands.ModelCommand(self)]
-        self.llm_model = args.model
         self.uuid = str(uuid.uuid4())
-        if workspace is not None:
-            self.workspace = Path(workspace)
-        else:
-            self.workspace = (
-                Path(args.workspace) / self.__class__.__name__.lower() / self.uuid
-            )
+        self.name = name
+
+        self.workspace = Path(config.workspace) / self.name
         self.workspace.mkdir(parents=True, exist_ok=True)
+        group_config = getattr(config.agent, name)
 
-        # Load default metadata
-        default_metadata_path = args.agent_metadata_path / self.agent_metadata_file
-
-        try:
-            with default_metadata_path.open() as agent_yaml:
-                default_config = yaml.safe_load(agent_yaml) or {}
-        except FileNotFoundError:
-            default_config = {}
-
-        # Merge with user-provided metadata from config if exists
-        agent_metadata_key = Path(self.agent_metadata_file).stem
-        if (
-            hasattr(args, "agent_metadata")
-            and agent_metadata_key in args.agent_metadata
-        ):
-            from llmse6.utils import deep_merge
-
-            default_config = deep_merge(
-                default_config, args.agent_metadata[agent_metadata_key]
-            )
-
-        # Set final config values
-        self.system_prompt = default_config.get("system_prompt")
-        self.model_params = default_config.get("model_params", {})
-        self.provider_model = self.model_params.pop("model", args.model)
-        print(f"Using model {self.provider_model} for {agent_metadata_key}")
+        # Load default metadata using configargparse
+        self.system_prompt = group_config.system_prompt
+        self.model_params = group_config.model_params
+        self.provider_model = self.model_params.pop("model", config.model)
+        print(f"Using model {self.provider_model} for {name}")
         self.state = BaseState(messages=[])
         if self.system_prompt:
             self.state["messages"] = [{"role": "system", "content": self.system_prompt}]

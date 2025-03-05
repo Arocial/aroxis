@@ -1,0 +1,32 @@
+[DEFAULT]
+# Model to use with ChatLiteLLM
+# model = deepseek/deepseek-chat
+
+# Path for agents to work, default to $current_dir/workspace
+# workspace = workspace
+
+
+[observability]
+# Observability provider to use (default: None)
+# provider = 
+
+# Langfuse public key
+# langfuse_public_key = 
+
+# Langfuse secret key
+# langfuse_secret_key = 
+
+# Langfuse host URL
+# langfuse_host = 
+
+
+[api_keys]
+
+[env_vars]
+
+[agent.rewrite]
+# 
+# system_prompt = 
+
+
+[agent.rewrite.model_params]

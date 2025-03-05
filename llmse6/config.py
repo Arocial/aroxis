@@ -1,119 +1,172 @@
-import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-import configargparse
-import yaml
+import tomli
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-
-
-def get_config():
-    # Parse command line arguments and config
-    parser = configargparse.ArgParser(
-        default_config_files=["config.yaml"],
-        description="Product Manager Agent Configuration",
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-    )
-    parser.add_argument("-c", "--config", is_config_file=True, help="config file path")
-    parser.add_argument(
-        "--model",
-        default="deepseek/deepseek-chat",
-        help="Model to use with ChatLiteLLM",
-    )
-    parser.add_argument(
-        "--workspace",
-        default="workspace",
-        help="Path for agents to work, default to $current_dir/workspace",
-    )
-
-    # Observability configuration group
-    obs_group = parser.add_argument_group("Observability Configuration")
-    obs_group.add_argument(
-        "--observability",
-        choices=["langfuse", None],
-        default=None,
-        help="Observability provider to use (default: None)",
-    )
-    obs_group.add_argument(
-        "--langfuse_public_key",
-        env_var="LANGFUSE_PUBLIC_KEY",
-        help="Langfuse public key",
-    )
-    obs_group.add_argument(
-        "--langfuse_secret_key",
-        env_var="LANGFUSE_SECRET_KEY",
-        help="Langfuse secret key",
-    )
-    obs_group.add_argument(
-        "--langfuse_host", env_var="LANGFUSE_HOST", help="Langfuse host URL"
-    )
-
-    # API Keys group
-    api_group = parser.add_argument_group("API Keys")
-    api_group.add_argument(
-        "--api-key",
-        action="append",
-        help="Set API key in format provider=<key>. Example: --api-key deepseek=<key>",
-    )
-    api_group.add_argument(
-        "--set-env",
-        action="append",
-        default=[],
-        help="Set environment variables in format NAME=value. "
-        "Example: --set-env AWS_REGION=us-west-2 (can be used multiple times)",
-    )
-
-    # Agent configuration group
-    agent_group = parser.add_argument_group("Agent Configuration")
-    agent_group.add_argument(
-        "--agent_metadata",
-        type=yaml.safe_load,
-        default={},
-        help="YAML string with agent-specific metadata overrides",
-    )
-    args = parser.parse_args()
-
-    # Set environment variables from config
-    os.environ["LANGFUSE_PUBLIC_KEY"] = args.langfuse_public_key
-    os.environ["LANGFUSE_SECRET_KEY"] = args.langfuse_secret_key
-    os.environ["LANGFUSE_HOST"] = args.langfuse_host
-
-    # Process arbitrary API keys
-    if args.api_key:
-        for key_spec in args.api_key:
-            try:
-                provider, key = key_spec.split("=", 1)
-                provider = provider.upper()
-                os.environ[f"{provider}_API_KEY"] = key
-            except ValueError:
-                print(
-                    f"Warning: Invalid API key format: {key_spec}. Expected provider=<key>"
-                )
-
-    # Process environment variables
-    if args.set_env:
-        for env_spec in args.set_env:
-            try:
-                var_name, value = env_spec.split("=", 1)
-                os.environ[var_name] = value
-            except ValueError:
-                print(
-                    f"Warning: Invalid env format: {env_spec}. Expected VAR_NAME=value"
-                )
-
-    # Ensure workspace directory exists
-    workspace_path = Path(args.workspace)
-    workspace_path.mkdir(parents=True, exist_ok=True)
-
-    add_extra_config(args)
-    return args
+from llmse6.utils import deep_merge
 
 
-def add_extra_config(config):
-    config.user_path = Path.home() / ".llmse6"
-    config.user_path.mkdir(parents=True, exist_ok=True)
+class TomlConfigParser:
+    def __init__(self, config_files: Optional[List[Path]] = None):
+        self._raw_data = None
+        self.known_groups = []
+        self.defaults = {}
+        self.parsed = Config({})
+        self.default_group_name = "DEFAULT"
+        self.default_group = self.add_argument_group(self.default_group_name)
+        self.config_files = config_files
 
-    config.verbose_out_path = config.user_path / "__verbose_out__"
-    config.verbose_out_path.mkdir(parents=True, exist_ok=True)
+    def parse_args(self):
+        self.load_config()
+        for group in self.known_groups:
+            group.parse_args()
+        self.parsed.update(self.parsed.pop(self.default_group_name))
+        return self.parsed
 
-    config.agent_metadata_path = PROJECT_ROOT / "agents" / "metadata"
+    def add_argument_group(self, name: str, help="", expose_raw=False):
+        """Create an argument group for organizing related arguments in TOML tables
+
+        Args:
+            name: The name of the group (will be a TOML table name)
+
+        Returns:
+            ArgumentGroup: A group object that can have arguments added to it
+        """
+        group = ArgumentGroup(self, name, help, expose_raw)
+        self.known_groups.append(group)
+        return group
+
+    def add_argument(
+        self, name: str, default=None, help: str = "", required: bool = False
+    ):
+        """Add a known argument with optional default value"""
+        self.default_group.add_argument(name, default, help, required)
+
+    def dump_default_config(self, dest=None):
+        """Generate a default config file based on known arguments"""
+        config = "\n".join([group.dump_default_config() for group in self.known_groups])
+        if dest:
+            dest.write(config)
+        return config
+
+    def load_config(self) -> Dict[str, Any]:
+        """Find and load TOML config file from various locations:
+        - $HOME/.config/llmse6/config.toml
+        - Current directory/.llmse6.config.toml
+        - Specified file
+        Later file have higher priorities.
+        """
+        search_paths = []
+        home_config = Path.home() / ".config" / "llmse6" / "config.toml"
+        search_paths.append(home_config)
+        current_dir = Path.cwd()
+        search_paths.append(current_dir / ".llmse6.config.toml")
+        if self.config_files:
+            search_paths.extend(self.config_files)
+
+        config = {}
+        for path in search_paths:
+            if path.exists():
+                with open(path, "rb") as f:
+                    config = deep_merge(config, tomli.load(f))
+
+        self._raw_data = config
+        return config
+
+
+class ArgumentGroup:
+    """Helper class for grouping arguments in TOML tables"""
+
+    def __init__(self, parent, name, help="", expose_raw=False):
+        self.parent = parent
+        self.name = name
+        self.known_args = {}
+        self.help = help
+        self.parsed = Config({})
+        self._raw_data = None
+        self.expose_raw = expose_raw
+
+    def parse_args(self):
+        self._parse_group()
+        for name, info in self.known_args.items():
+            self._parse_argument(name, info["default"])
+        return self.parsed
+
+    def _parse_group(self):
+        groups = self.name.split(".")
+        raw = self.parent._raw_data
+
+        for g in groups:
+            if raw and g in raw:
+                raw = raw[g]
+            else:
+                raw = {}
+                break
+        self._raw_data = raw
+
+        parsed = self.parent.parsed
+        for g in groups:
+            parsed = parsed.setdefault(g, Config({}))
+        if self.expose_raw:
+            parsed.update(self._raw_data)
+        self.parsed = parsed
+
+    def _parse_argument(self, name, default):
+        value = default
+        if self._raw_data and name in self._raw_data:
+            value = self._raw_data[name]
+        self.parsed[name] = value
+
+    def add_argument(
+        self, name: str, default=None, help: str = "", required: bool = False
+    ):
+        """Add an argument to this group
+
+        Args:
+            name: Argument name (will be nested under the group in TOML)
+            default: Default value if not specified
+            help: Description of the argument
+            required: Whether this argument is required
+
+        Returns:
+            The current value of this argument, or the default
+        """
+
+        self.known_args[name] = {
+            "default": default,
+            "help": help,
+            "required": required,
+        }
+
+    def dump_default_config(self):
+        """Generate a default config file based on known arguments"""
+
+        config_text = f"[{self.name}]\n"
+        # First add all ungrouped arguments
+        for name, info in self.known_args.items():
+            config_text += f"# {info['help']}\n"
+            if info["required"]:
+                config_text += "# Required: Yes\n"
+
+            default = info["default"]
+            if default is None:
+                config_text += f"# {name} = \n\n"
+            else:
+                config_text += f"# {name} = {default}\n\n"
+
+        return config_text
+
+
+class Config(dict):
+    """Wrapper class that allows both dot notation and dictionary-style access to fields"""
+
+    def __getattr__(self, name):
+        if name in self:
+            value = self[name]
+            if isinstance(value, dict):
+                return Config(value)
+            return value
+        raise AttributeError(f"'Config' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        self[name] = value
