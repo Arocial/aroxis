@@ -16,6 +16,7 @@ dependencies = [
     "prompt-toolkit>=3.0",
     "pyyaml>=6.0",
     "simplellm",
+    "asyncio"
 ]
 [project.urls]
 Homepage = "https://github.com/fangzhen/llmse6"

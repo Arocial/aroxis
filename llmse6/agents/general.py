@@ -10,7 +10,7 @@ class ChatAgent(LLMBaseAgent):
             [SaveCommand(self, tag_name=None, default_file="output.md")]
         )
 
-    def start(self, input_gen=None):
+    async def start(self, input_gen=None):
         """Start the agent with optional input generator
 
         Args:
@@ -19,7 +19,7 @@ class ChatAgent(LLMBaseAgent):
         if input_gen is None:
             input_gen = user_input_generator()
 
-        for user_input in input_gen:
+        async for user_input in input_gen:
             command_executed = False
             for command in self.commands:
                 if command.matches(user_input):
@@ -29,4 +29,4 @@ class ChatAgent(LLMBaseAgent):
             if command_executed:
                 continue
 
-            self.llm_node(user_input)
+            await self.llm_node(user_input)

@@ -1,5 +1,5 @@
 import yaml
-from prompt_toolkit import prompt
+from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
 
@@ -21,12 +21,12 @@ def parse_dict(value: str) -> dict:
     return dict(yaml.safe_load(value))
 
 
-def user_input_generator(
+async def user_input_generator(
     cached_human_responses=[], cached_response_index=0, force_cached=False
 ):
-    """Generator that yields user input"""
+    """Async generator that yields user input"""
 
-    def wrapper():
+    async def wrapper():
         nonlocal cached_response_index
         while True:
             try:
@@ -36,12 +36,12 @@ def user_input_generator(
                     cached_response_index += 1
                     print(f"(cached): {user_input}\n")
                 else:
-                    user_input = prompt(
-                        "User (q/Q to quit): ",
+                    session = PromptSession(
                         history=history,
                         auto_suggest=AutoSuggestFromHistory(),
                         mouse_support=False,
                     )
+                    user_input = await session.prompt_async("User (q/Q to quit): ")
             except EOFError:
                 user_input = cached_human_responses[cached_response_index]
                 cached_response_index += 1

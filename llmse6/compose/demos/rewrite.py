@@ -1,11 +1,13 @@
 import argparse
+import asyncio
 import sys
 
 from llmse6.agents.general import ChatAgent
 from llmse6.config import TomlConfigParser
 from llmse6.utils import user_input_generator
 
-if __name__ == "__main__":
+
+async def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -37,6 +39,12 @@ if __name__ == "__main__":
         f"/save {args.file}",
         "q",
     ]
-    agent.start(
-        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
+    await agent.start(
+        await user_input_generator(
+            cached_human_responses=test_user_msg, force_cached=False
+        )
     )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

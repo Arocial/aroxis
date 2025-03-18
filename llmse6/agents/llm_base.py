@@ -43,7 +43,7 @@ class LLMBaseAgent:
 
         self.additional_files = []
 
-    def llm_node(self, input_content: str):
+    async def llm_node(self, input_content: str):
         messages = self.state["messages"]
 
         for fname in self.additional_files:
@@ -59,16 +59,16 @@ class LLMBaseAgent:
         messages.append({"role": "user", "content": input_content})
 
         self.model_params["stream"] = True
-        response = LLMClient(provider_model=self.provider_model).completion(
+        response = await LLMClient(provider_model=self.provider_model).async_completion(
             messages=messages, **self.model_params
         )
 
         print(f"======{self.__class__.__name__} Assistant:======")
-        for c in response.iter_content():
+        async for c in response.iter_content():
             print(c, end="", flush=True)
         print()  # Add newline after streaming
 
-        ai_message = response.accumulate_stream()
+        ai_message = await response.accumulate_stream()
         self.state["messages"].append(ai_message.choices[0].message)
 
     def _save_content(self, content_msg: str, tag_name: str | None, file_name: str):
