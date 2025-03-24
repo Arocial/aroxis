@@ -18,7 +18,7 @@ async def main():
     )
     args = parser.parse_args()
 
-    default_agent_config = Path.home() # ai! replace `Path.home()` with software_dev.toml in same dir of current file.
+    default_agent_config = Path(__file__).parent / "software_dev.toml"
     toml_parser = TomlConfigParser(config_files=[default_agent_config])
     agent = ChatAgent("rewrite", toml_parser)
 
