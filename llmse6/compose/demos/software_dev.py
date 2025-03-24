@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+from pathlib import Path
 import sys
 
 from llmse6.agents.general import ChatAgent
@@ -17,8 +18,8 @@ async def main():
     )
     args = parser.parse_args()
 
-    default_agent_config = "" # ai! replace with software_dev.toml in same dir.
-    toml_parser = TomlConfigParser()
+    default_agent_config = Path.home() # ai! replace `Path.home()` with software_dev.toml in same dir of current file.
+    toml_parser = TomlConfigParser(config_files=[default_agent_config])
     agent = ChatAgent("rewrite", toml_parser)
 
     if args.dump_default_config:
