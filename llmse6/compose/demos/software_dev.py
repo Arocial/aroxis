@@ -1,7 +1,7 @@
 import argparse
 import asyncio
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from llmse6.agents.general import ChatAgent
 from llmse6.config import TomlConfigParser
