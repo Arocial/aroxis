@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import sys
 
+from llmse6 import agents
 from llmse6.agents.general import ChatAgent
 from llmse6.config import TomlConfigParser
 from llmse6.utils import user_input_generator
@@ -23,6 +24,7 @@ async def main():
     args = parser.parse_args()
 
     toml_parser = TomlConfigParser()
+    agents.init(toml_parser)
     agent = ChatAgent("rewrite", toml_parser)
 
     if args.dump_default_config:

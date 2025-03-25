@@ -3,6 +3,7 @@ import asyncio
 import sys
 from pathlib import Path
 
+from llmse6 import agents
 from llmse6.agents.general import ChatAgent
 from llmse6.config import TomlConfigParser
 from llmse6.utils import user_input_generator
@@ -20,27 +21,25 @@ async def main():
 
     default_agent_config = Path(__file__).parent / "software_dev.toml"
     toml_parser = TomlConfigParser(config_files=[default_agent_config])
-    agent = ChatAgent("rewrite", toml_parser)
+    agents.init(toml_parser)
+    prd_agent = ChatAgent("prd", toml_parser)
+    ux_agent = ChatAgent("ux", toml_parser)
 
     if args.dump_default_config:
         with open(args.dump_default_config, "w") as f:
             toml_parser.dump_default_config(f)
         sys.exit(0)
 
-    test_user_msg = [
-        f"/add {args.file}",
-        "Migrating these files from vue2 to vue3 composition api. only do necessary changes.\n"
-        "Output Requirements:\n"
-        "1. Don't be lazy: Reply the **whole** migrated file. **Don't omit content even if it is the same with original code.**\n"
-        "2. Only output raw migrated code, nothing else, no surrounding ```",
-        f"/save {args.file}",
-        "q",
-    ]
-    await agent.start(
+    test_user_msg = []
+    await prd_agent.start(
         await user_input_generator(
             cached_human_responses=test_user_msg, force_cached=False
         )
     )
+
+    print("PRD agent finished.")
+
+    await ux_agent.start(await user_input_generator())
 
 
 if __name__ == "__main__":

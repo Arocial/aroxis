@@ -1,4 +1,3 @@
-import re
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List
@@ -6,7 +5,7 @@ from typing import Any, Dict, List
 from simplellm.client import LLMClient
 from typing_extensions import TypedDict
 
-from llmse6 import agents, commands
+from llmse6 import commands
 
 
 class BaseState(TypedDict):
@@ -15,8 +14,6 @@ class BaseState(TypedDict):
 
 class LLMBaseAgent:
     def __init__(self, name, config_parser):
-        agents.init(config_parser)
-
         agent_group = config_parser.add_argument_group(name=f"agent.{name}")
         agent_group.add_argument("system_prompt", default="")
         config_parser.add_argument_group(
@@ -28,8 +25,7 @@ class LLMBaseAgent:
         self.uuid = str(uuid.uuid4())
         self.name = name
 
-        self.workspace = Path(config.workspace) / self.name
-        self.workspace.mkdir(parents=True, exist_ok=True)
+        self.workspace = Path(config.workspace)
         group_config = getattr(config.agent, name)
 
         # Load default metadata using configargparse
@@ -70,20 +66,3 @@ class LLMBaseAgent:
 
         ai_message = await response.accumulate_stream()
         self.state["messages"].append(ai_message.choices[0].message)
-
-    def _save_content(self, content_msg: str, tag_name: str | None, file_name: str):
-        """Save content from message to file"""
-        if tag_name is not None:
-            pattern = rf"<{tag_name}>(.*?)</{tag_name}>"
-            match = re.search(pattern, content_msg, re.DOTALL)
-
-            if match:
-                result = match.group(1)
-            else:
-                result = content_msg
-        else:
-            result = content_msg
-        output_path = self.workspace / file_name
-        print(f"Saving content to {output_path}")
-        with output_path.open("w") as f:
-            f.write(result)

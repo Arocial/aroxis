@@ -3,16 +3,11 @@ from pathlib import Path
 
 from simplellm import observation
 
-_init_called = False
-
 
 def init(config_parser):
-    global _init_called
-    if not _init_called:
-        conf = add_agent_options(config_parser)
-        setup_llm_observability(conf)
-        _init_called = True
-    return config_parser
+    conf = add_agent_options(config_parser)
+    setup_llm_observability(conf)
+    return conf
 
 
 # Observability & Logging

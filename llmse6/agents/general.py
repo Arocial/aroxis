@@ -6,9 +6,7 @@ from llmse6.utils import user_input_generator
 class ChatAgent(LLMBaseAgent):
     def __init__(self, name, config_parser=None):
         super().__init__(name, config_parser)
-        self.commands.extend(
-            [SaveCommand(self, tag_name=None, default_file="output.md")]
-        )
+        self.commands.extend([SaveCommand(self)])
 
     async def start(self, input_gen=None):
         """Start the agent with optional input generator
