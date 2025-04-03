@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from simplellm import observation
+from kissllm import observation
 
 
 def init(config_parser):

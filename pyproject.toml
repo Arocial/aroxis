@@ -15,7 +15,7 @@ dependencies = [
     "tomli",
     "prompt-toolkit>=3.0",
     "pyyaml>=6.0",
-    "simplellm",
+    "kissllm",
     "asyncio"
 ]
 [project.urls]
@@ -26,12 +26,6 @@ where = ["."]
 
 [tool.setuptools.package-data]
 llmse6 = ["agents/metadata/*"]
-
-[tool.uv.sources]
-simplellm = { path = "../simplellm", editable = true }
-
-[tool.pyright]
-extraPaths = ["../simplellm/"]
 
 [dependency-groups]
 dev = [

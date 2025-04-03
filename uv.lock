@@ -217,6 +217,21 @@ wheels = [
 ]
 
 [[package]]
+name = "kissllm"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asyncio" },
+    { name = "langfuse" },
+    { name = "mcp" },
+    { name = "openai" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b3/6e/973b475059ef1d6d0e5daa11e6be7d4bcad001bc30ce8b910aa7e5a1ce61/kissllm-0.0.1.tar.gz", hash = "sha256:020f92407adc58c7de8df03ebcf9ff6a8d88da510899de0616e0e6b62e375316", size = 14599 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/f8/b800a0e691f80fc191f8e07640f26082790f2c7a6d3571bcb29ccf71d4d2/kissllm-0.0.1-py3-none-any.whl", hash = "sha256:c6b9cbf8c91b16b2d800bf1e9cb1e4acd13932f8612b9bab5146e81c6937a71a", size = 17494 },
+]
+
+[[package]]
 name = "langfuse"
 version = "2.59.3"
 source = { registry = "https://pypi.org/simple" }
@@ -241,9 +256,9 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "asyncio" },
+    { name = "kissllm" },
     { name = "prompt-toolkit" },
     { name = "pyyaml" },
-    { name = "simplellm" },
     { name = "tomli" },
 ]
 
@@ -255,9 +270,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "asyncio" },
+    { name = "kissllm" },
     { name = "prompt-toolkit", specifier = ">=3.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "simplellm", editable = "../simplellm" },
     { name = "tomli" },
 ]
 
@@ -461,31 +476,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/63/70/2bf7780ad2d390a8d301ad0b550f1581eadbd9a20f896afe06353c2a2913/requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760", size = 131218 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6", size = 64928 },
-]
-
-[[package]]
-name = "simplellm"
-version = "0.1.0"
-source = { editable = "../simplellm" }
-dependencies = [
-    { name = "asyncio" },
-    { name = "langfuse" },
-    { name = "mcp" },
-    { name = "openai" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "asyncio" },
-    { name = "langfuse", specifier = ">=2.59.3" },
-    { name = "mcp", specifier = ">=0.1.0" },
-    { name = "openai", specifier = ">=1.63.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "python-dotenv" },
 ]
 
 [[package]]

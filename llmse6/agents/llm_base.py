@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List
 
-from simplellm.client import LLMClient
+from kissllm.client import LLMClient
 from typing_extensions import TypedDict
 
 from llmse6 import commands
