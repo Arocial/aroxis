@@ -1,10 +1,10 @@
 [project]
 name = "llmse6"
-version = "0.1.0"
+version = "0.0.1"
 authors = [
     {name="fangzhen", email="fangzhen@live.com"},
 ]
-description = "LLM-based Software Engineering Agents"
+description = "Flexible LLM-based Agents"
 readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
@@ -23,9 +23,6 @@ Homepage = "https://github.com/fangzhen/llmse6"
 
 [tool.setuptools.packages.find]
 where = ["."]
-
-[tool.setuptools.package-data]
-llmse6 = ["agents/metadata/*"]
 
 [dependency-groups]
 dev = [
