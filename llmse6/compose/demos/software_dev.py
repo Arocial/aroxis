@@ -32,9 +32,7 @@ async def main():
 
     test_user_msg = []
     await prd_agent.start(
-        await user_input_generator(
-            cached_human_responses=test_user_msg, force_cached=False
-        )
+        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
     )
 
     print("PRD agent finished.")

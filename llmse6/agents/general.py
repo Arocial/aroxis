@@ -1,3 +1,5 @@
+import asyncio
+
 from llmse6.agents.llm_base import LLMBaseAgent
 from llmse6.commands import SaveCommand
 from llmse6.utils import user_input_generator
@@ -17,14 +19,22 @@ class ChatAgent(LLMBaseAgent):
         if input_gen is None:
             input_gen = user_input_generator()
 
-        async for user_input in input_gen:
-            command_executed = False
-            for command in self.commands:
-                if command.matches(user_input):
-                    command.execute(user_input)
-                    command_executed = True
-                    break
-            if command_executed:
-                continue
+        async with self.tool_context():
+            async for user_input in input_gen:
+                if user_input.startswith("/"):
+                    command_executed = False
+                    for command in self.commands:
+                        if command.matches(user_input):
+                            # Commands might be async now
+                            if asyncio.iscoroutinefunction(command.execute):
+                                await command.execute(user_input)
+                            else:
+                                command.execute(user_input)
+                            command_executed = True
+                            break
+                    if not command_executed:
+                        print(f"Command not found: {user_input}")
 
-            await self.llm_node(user_input)
+                    continue
+
+                await self.llm_node(user_input)

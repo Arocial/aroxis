@@ -21,26 +21,26 @@ def parse_dict(value: str) -> dict:
     return dict(yaml.safe_load(value))
 
 
-async def user_input_generator(
+def user_input_generator(
     cached_human_responses=[], cached_response_index=0, force_cached=False
 ):
     """Async generator that yields user input"""
 
     async def wrapper():
         nonlocal cached_response_index
+        history = FileHistory(".llmse6_history")
+        session = PromptSession(
+            history=history,
+            auto_suggest=AutoSuggestFromHistory(),
+            mouse_support=False,
+        )
         while True:
             try:
-                history = FileHistory(".llmse6_history")
                 if force_cached:
                     user_input = cached_human_responses[cached_response_index]
                     cached_response_index += 1
                     print(f"(cached): {user_input}\n")
                 else:
-                    session = PromptSession(
-                        history=history,
-                        auto_suggest=AutoSuggestFromHistory(),
-                        mouse_support=False,
-                    )
                     user_input = await session.prompt_async("User (q/Q to quit): ")
             except EOFError:
                 user_input = cached_human_responses[cached_response_index]
@@ -48,7 +48,7 @@ async def user_input_generator(
                 print(f"(cached): {user_input}\n")
             if user_input in {"q", "Q"}:
                 print("AI: Byebye")
-                return
+                break
             yield user_input
 
     return wrapper()

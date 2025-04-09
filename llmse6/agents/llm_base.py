@@ -1,11 +1,22 @@
+import logging
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, AsyncGenerator, Dict, List
 
 from kissllm.client import LLMClient
+from kissllm.mcp import (
+    MCPManager,
+    SSEMCPConfig,
+    StdioMCPConfig,
+)
+from kissllm.tools import ToolManager
 from typing_extensions import TypedDict
 
 from llmse6 import commands
+from llmse6.commands import InvokeToolCommand, ListToolCommand
+
+logger = logging.getLogger(__name__)
 
 
 class BaseState(TypedDict):
@@ -20,8 +31,14 @@ class LLMBaseAgent:
             name=f"agent.{name}.model_params", expose_raw=True
         )
         config = config_parser.parse_args()
+        self.config = config
 
-        self.commands = [commands.AddCommand(self), commands.ModelCommand(self)]
+        self.commands = [
+            commands.AddCommand(self),
+            commands.ModelCommand(self),
+            InvokeToolCommand(self),
+            ListToolCommand(self),
+        ]
         self.uuid = str(uuid.uuid4())
         self.name = name
 
@@ -37,7 +54,45 @@ class LLMBaseAgent:
         if self.system_prompt:
             self.state["messages"] = [{"role": "system", "content": self.system_prompt}]
 
+        self.mcp_servers = (
+            config.agent.mcp_servers if hasattr(config.agent, "mcp_servers") else None
+        )
+        self.mcp_manager = MCPManager()
+        self.tool_registry = ToolManager(mcp_manager=self.mcp_manager)
+
         self.additional_files = []
+
+    @asynccontextmanager
+    async def tool_context(self) -> AsyncGenerator[None, None]:
+        """Asynchronous context manager for registering and unregistering tools."""
+        if self.mcp_servers is None:
+            yield
+            return
+
+        for server_id, server_conf_dict in self.mcp_servers.items():
+            try:
+                if "command" in server_conf_dict:
+                    config = StdioMCPConfig(**server_conf_dict)
+                elif "url" in server_conf_dict:
+                    config = SSEMCPConfig(**server_conf_dict)
+                else:
+                    logger.warning(
+                        f"Skipping MCP server '{server_id}': Configuration must contain 'command' (for stdio) or 'url' (for sse)."
+                    )
+                    continue
+
+                await self.mcp_manager.register_server(server_id, config)
+                logger.info(f"Registered MCP server '{server_id}' from configuration.")
+            except Exception as e:
+                logger.error(
+                    f"Failed to register MCP server '{server_id}' from configuration: {e}",
+                    exc_info=True,
+                )
+
+        try:
+            yield
+        finally:
+            await self.mcp_manager.unregister_all()
 
     async def llm_node(self, input_content: str):
         messages = self.state["messages"]

@@ -1,7 +1,10 @@
+import logging
 import os
 from pathlib import Path
 
 from kissllm import observation
+
+logger = logging.getLogger(__name__)
 
 
 def init(config_parser):
@@ -50,6 +53,10 @@ def add_agent_options(parser):
     # API Keys group
     parser.add_argument_group("api_keys", "API Keys", expose_raw=True)
     parser.add_argument_group("env_vars", "Environment variables", expose_raw=True)
+    # MCP Servers group
+    parser.add_argument_group(
+        "agent.mcp_servers", "MCP Server Configurations", expose_raw=True
+    )
 
     args = parser.parse_args()
 

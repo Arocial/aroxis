@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import sys
+from pathlib import Path
 
 from llmse6 import agents
 from llmse6.agents.general import ChatAgent
@@ -23,7 +24,8 @@ async def main():
     )
     args = parser.parse_args()
 
-    toml_parser = TomlConfigParser()
+    default_agent_config = Path(__file__).parent / "rewrite.toml"
+    toml_parser = TomlConfigParser(config_files=[default_agent_config])
     agents.init(toml_parser)
     agent = ChatAgent("rewrite", toml_parser)
 
@@ -42,9 +44,7 @@ async def main():
         "q",
     ]
     await agent.start(
-        await user_input_generator(
-            cached_human_responses=test_user_msg, force_cached=False
-        )
+        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
     )
 
 

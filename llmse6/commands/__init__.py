@@ -1,4 +1,10 @@
+import json
+import logging
 import re
+
+import yaml
+
+logger = logging.getLogger(__name__)
 
 
 class Command:
@@ -77,3 +83,69 @@ class SaveCommand(Command):
         print(f"Saving content to {output_path}")
         with output_path.open("w") as f:
             f.write(result)
+
+
+class InvokeToolCommand(Command):
+    command = "invoke-tool"
+    description = "Invoke a registered tool - /invoke-tool <function_name> [json_args]"
+
+    async def execute(self, user_input: str):
+        tool_registry = self.agent.tool_registry
+
+        parts = user_input.split(maxsplit=2)
+        if len(parts) < 2:
+            print("Usage: /invoke-tool <function_name> [json_args]")
+            return
+
+        function_name = parts[1]
+        args_str = parts[2] if len(parts) > 2 else "{}"
+
+        try:
+            args = json.loads(args_str)
+            if not isinstance(args, dict):
+                raise ValueError("Arguments must be a JSON object (dictionary).")
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON arguments: {e}")
+            return
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+
+        # Prepare the tool_call structure expected by execute_tool_call
+        # Note: We don't have a real tool_call ID here, as it's a direct invocation.
+        tool_call_data = {
+            "id": f"cmd_{function_name}",  # Generate a placeholder ID
+            "type": "function",
+            "function": {"name": function_name, "arguments": json.dumps(args)},
+        }
+
+        try:
+            print(f"Invoking tool '{function_name}' with args: {args}")
+            result = await tool_registry.execute_tool_call(tool_call_data)
+            print(f"Tool '{function_name}' executed successfully.")
+            print("Result:")
+            print(result)
+        except ValueError as e:
+            print(f"Error invoking tool '{function_name}': {e}")
+        except ConnectionError as e:
+            print(f"Error connecting to MCP server for tool '{function_name}': {e}")
+        except Exception as e:
+            logger.error(
+                f"Unexpected error invoking tool '{function_name}': {e}", exc_info=True
+            )
+            print(f"An unexpected error occurred: {e}")
+
+
+class ListToolCommand(Command):
+    command = "list-tools"
+    description = "List all registered tools"
+
+    async def execute(self, user_input: str):
+        tool_registry = self.agent.tool_registry
+        tool_specs = tool_registry.get_tools_specs()
+        if not tool_specs:
+            print("No tools registered.")
+            return
+
+        print("Registered Tools:")
+        print(yaml.safe_dump(tool_specs))
