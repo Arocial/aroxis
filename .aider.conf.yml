@@ -1,3 +1,2 @@
 lint-cmd:
 - "python: tools/lint"
-read: .aider.instructions.md
