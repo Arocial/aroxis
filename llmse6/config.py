@@ -14,6 +14,15 @@ class TomlConfigParser:
         self.parsed = Config({})
         self.default_group_name = "DEFAULT"
         self.default_group = self.add_argument_group(self.default_group_name)
+        # Define network proxy settings group
+        proxy_group = self.add_argument_group(
+            "network_proxy", help="Network proxy settings"
+        )
+        proxy_group.add_argument(
+            "protocol", default=None, help="Proxy protocol (e.g., http, https, socks5)"
+        )
+        proxy_group.add_argument("host", default=None, help="Proxy host address")
+        proxy_group.add_argument("port", default=None, help="Proxy port number")
         self.config_files = config_files
 
     def parse_args(self):

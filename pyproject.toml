@@ -16,7 +16,8 @@ dependencies = [
     "prompt-toolkit>=3.0",
     "pyyaml>=6.0",
     "kissllm",
-    "asyncio"
+    "asyncio",
+    "GitPython>=3.1.30",
 ]
 [project.urls]
 Homepage = "https://github.com/fangzhen/llmse6"
