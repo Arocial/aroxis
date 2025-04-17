@@ -19,7 +19,7 @@ class ChatAgent(LLMBaseAgent):
         if input_gen is None:
             input_gen = user_input_generator()
 
-        async with self.tool_context():
+        async with self.mcp_manager:
             async for user_input in input_gen:
                 if user_input.startswith("/"):
                     command_executed = False
