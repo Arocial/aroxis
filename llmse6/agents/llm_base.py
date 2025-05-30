@@ -23,7 +23,7 @@ class BaseState(TypedDict):
 
 
 class LLMBaseAgent:
-    def __init__(self, name, config_parser):
+    def __init__(self, name, config_parser, local_tool_manager=None):
         agent_group = config_parser.add_argument_group(name=f"agent.{name}")
         agent_group.add_argument("system_prompt", default="")
         config_parser.add_argument_group(
@@ -53,6 +53,8 @@ class LLMBaseAgent:
         if self.system_prompt:
             self.state["messages"] = [{"role": "system", "content": self.system_prompt}]
 
+        # Manage tool specs.
+        tool_managers = {}
         self.mcp_servers = (
             config.agent.mcp_servers if hasattr(config.agent, "mcp_servers") else None
         )
@@ -72,11 +74,11 @@ class LLMBaseAgent:
                         f"Skipping MCP server '{server_name}': Configuration must contain 'command' (for stdio) or 'url' (for sse)."
                     )
                     continue
-            self.mcp_manager = MCPManager(mcp_configs)
-            self.tool_registry = ToolManager(mcp_manager=self.mcp_manager)
-        else:
-            self.mcp_manager = MCPManager([])
-            self.tool_registry = None
+            tool_managers["mcp_manager"] = MCPManager(mcp_configs)
+        if local_tool_manager:
+            tool_managers["local_manager"] = local_tool_manager
+        if tool_managers:
+            self.tool_registry = ToolManager(**tool_managers)
 
         self.additional_files = []
 
@@ -88,7 +90,9 @@ class LLMBaseAgent:
                 with open(self.workspace / fname, "r") as f:
                     content = f.read()
                     print(f"Adding content from {fname}")
-                    input_content = f"{fname}:\n{content}\n{input_content}"
+                    input_content = (
+                        f"\n====FILE:{fname}====\n{content}\n\n{input_content}"
+                    )
             except FileNotFoundError:
                 print(f"File not found: {fname}")
                 continue
@@ -96,14 +100,8 @@ class LLMBaseAgent:
         messages.append({"role": "user", "content": input_content})
 
         self.model_params["stream"] = True
-        response = await LLMClient(provider_model=self.provider_model).async_completion(
-            messages=messages, **self.model_params
-        )
+        response = await LLMClient(
+            provider_model=self.provider_model, tool_registry=self.tool_registry
+        ).async_completion_with_tool_execution(messages=messages, **self.model_params)
 
-        print(f"======{self.__class__.__name__} Assistant:======")
-        async for c in response.iter_content():
-            print(c, end="", flush=True)
-        print()  # Add newline after streaming
-
-        ai_message = await response.accumulate_stream()
-        self.state["messages"].append(ai_message.choices[0].message)
+        self.state["messages"].append(response.choices[0].message)

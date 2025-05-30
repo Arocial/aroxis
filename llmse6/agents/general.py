@@ -6,8 +6,8 @@ from llmse6.utils import user_input_generator
 
 
 class ChatAgent(LLMBaseAgent):
-    def __init__(self, name, config_parser=None):
-        super().__init__(name, config_parser)
+    def __init__(self, name, config_parser=None, local_tool_manager=None):
+        super().__init__(name, config_parser, local_tool_manager)
         self.commands.extend([SaveCommand(self)])
 
     async def start(self, input_gen=None):
@@ -19,7 +19,7 @@ class ChatAgent(LLMBaseAgent):
         if input_gen is None:
             input_gen = user_input_generator()
 
-        async with self.mcp_manager:
+        async with self.tool_registry:
             async for user_input in input_gen:
                 if user_input.startswith("/"):
                     command_executed = False
