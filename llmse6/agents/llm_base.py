@@ -79,6 +79,8 @@ class LLMBaseAgent:
             tool_managers["local_manager"] = local_tool_manager
         if tool_managers:
             self.tool_registry = ToolManager(**tool_managers)
+        else:
+            self.tool_registry = None
 
         self.additional_files = []
 
@@ -100,8 +102,8 @@ class LLMBaseAgent:
         messages.append({"role": "user", "content": input_content})
 
         self.model_params["stream"] = True
-        response = await LLMClient(
+        await LLMClient(
             provider_model=self.provider_model, tool_registry=self.tool_registry
-        ).async_completion_with_tool_execution(messages=messages, **self.model_params)
-
-        self.state["messages"].append(response.choices[0].message)
+        ).async_completion_with_tool_execution(
+            messages=messages, msg_update=list.append, **self.model_params
+        )
