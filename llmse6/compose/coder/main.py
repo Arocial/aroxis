@@ -7,7 +7,7 @@ from pathlib import Path
 from kissllm.tools import LocalToolManager
 
 from llmse6 import agents
-from llmse6.agents.general import ChatAgent
+from llmse6.agents.chat import ChatAgent
 from llmse6.compose.coder.prompt import CoderPromptManager
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from llmse6 import agents
-from llmse6.agents.general import ChatAgent
+from llmse6.agents.chat import ChatAgent
 from llmse6.config import TomlConfigParser
 from llmse6.utils import user_input_generator
 
