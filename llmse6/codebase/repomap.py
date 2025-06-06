@@ -9,6 +9,7 @@ import warnings
 from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
 
+import pygments
 from diskcache import Cache
 from grep_ast import TreeContext
 from pygments.lexers import guess_lexer_for_filename
@@ -36,7 +37,6 @@ class RepoMap:
         map_tokens=1024,
         root=None,
         main_model=None,
-        io=None,
         repo_content_prefix=None,
         verbose=False,
         max_context_window=None,
@@ -232,8 +232,11 @@ class RepoMap:
         if not code:
             return
 
-        lexer = guess_lexer_for_filename(fname, code)
-        lang = lexer.name.lower()
+        try:
+            lexer = guess_lexer_for_filename(fname, code)
+            lang = lexer.name.lower()
+        except pygments.util.ClassNotFound:
+            return
 
         try:
             language = get_language(lang)

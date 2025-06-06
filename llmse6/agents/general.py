@@ -1,13 +1,20 @@
 import asyncio
 
 from llmse6.agents.llm_base import LLMBaseAgent
+from llmse6.agents.prompt import SimplePromptManager
 from llmse6.commands import SaveCommand
 from llmse6.utils import user_input_generator
 
 
 class ChatAgent(LLMBaseAgent):
-    def __init__(self, name, config_parser=None, local_tool_manager=None):
-        super().__init__(name, config_parser, local_tool_manager)
+    def __init__(
+        self,
+        name,
+        config_parser=None,
+        local_tool_manager=None,
+        prompt_manager_cls=SimplePromptManager,
+    ):
+        super().__init__(name, config_parser, local_tool_manager, prompt_manager_cls)
         self.commands.extend([SaveCommand(self)])
 
     async def start(self, input_gen=None):

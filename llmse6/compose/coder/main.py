@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import logging
 import sys
 from pathlib import Path
 
@@ -7,12 +8,17 @@ from kissllm.tools import LocalToolManager
 
 from llmse6 import agents
 from llmse6.agents.general import ChatAgent
+from llmse6.compose.coder.prompt import CoderPromptManager
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit
 from llmse6.utils import user_input_generator
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 async def main():
+    logger.debug("Starting main function")
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -28,14 +34,18 @@ async def main():
     local_tool_manager = LocalToolManager()
     file_edit.register_tools(local_tool_manager)
 
-    coder_agent = ChatAgent("coder", toml_parser, local_tool_manager)
+    coder_agent = ChatAgent(
+        "coder", toml_parser, local_tool_manager, CoderPromptManager
+    )
 
     if args.dump_default_config:
+        logger.debug(f"Dumping default config to {args.dump_default_config}")
         with open(args.dump_default_config, "w") as f:
             toml_parser.dump_default_config(f)
         sys.exit(0)
 
     test_user_msg = []
+    logger.debug("Starting coder agent")
     await coder_agent.start(
         user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
     )

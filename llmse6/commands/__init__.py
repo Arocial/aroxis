@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from pathlib import Path
 
 import yaml
 
@@ -25,16 +26,31 @@ class Command:
         raise NotImplementedError
 
 
-class AddCommand(Command):
+class FileCommand(Command):
     command = "add"
     description = "Add files to context - /add <file1> [file2...]"
+
+    def __init__(self, agent):
+        super().__init__(agent)
+        self.files = []
+        self.workspace = self.agent.workspace
 
     def execute(self, user_input: str):
         files = user_input.split()[1:]
         if not files:
             print("Please specify files to add")
             return
-        self.agent.additional_files.extend(files)
+        for f in files:
+            # normalize file path to relative to workspace if it's subtree of workspace, otherwise absolute.
+            p = Path(f)
+            if not p.is_absolute():
+                p = (self.workspace / p).absolute()
+            if p.is_relative_to(self.workspace):
+                p = p.relative_to(self.workspace)
+            if p.exists():
+                self.files.append(p)
+            else:
+                logger.warning(f"{p} doesn't exist, ignoring.")
 
 
 class ModelCommand(Command):
