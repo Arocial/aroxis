@@ -1,8 +1,6 @@
-import asyncio
-
+from llmse6 import commands
 from llmse6.agents.llm_base import LLMBaseAgent
 from llmse6.agents.prompt import SimplePromptManager
-from llmse6.commands import SaveCommand
 from llmse6.utils import user_input_generator
 
 
@@ -15,7 +13,15 @@ class ChatAgent(LLMBaseAgent):
         prompt_manager_cls=SimplePromptManager,
     ):
         super().__init__(name, config_parser, local_tool_manager, prompt_manager_cls)
-        self.commands.extend([SaveCommand(self)])
+
+        self.additional_files = []
+        self.register_in_chat_command(
+            commands.FileCommand(self.additional_files, self.workspace)
+        )
+        self.register_in_chat_command(commands.ModelCommand(self))
+        self.register_in_chat_command(commands.InvokeToolCommand(self))
+        self.register_in_chat_command(commands.ListToolCommand(self))
+        self.register_in_chat_command(commands.SaveCommand(self))
 
     async def start(self, input_gen=None):
         """Start the agent with optional input generator
@@ -28,20 +34,6 @@ class ChatAgent(LLMBaseAgent):
 
         async with self.tool_registry:
             async for user_input in input_gen:
-                if user_input.startswith("/"):
-                    command_executed = False
-                    for command in self.commands:
-                        if command.matches(user_input):
-                            # Commands might be async now
-                            if asyncio.iscoroutinefunction(command.execute):
-                                await command.execute(user_input)
-                            else:
-                                command.execute(user_input)
-                            command_executed = True
-                            break
-                    if not command_executed:
-                        print(f"Command not found: {user_input}")
-
-                    continue
-
-                await self.llm_node(user_input)
+                command_executed = await self.try_execute_command(user_input)
+                if not command_executed:
+                    await self.llm_node(user_input)

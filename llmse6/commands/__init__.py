@@ -17,9 +17,8 @@ class Command:
     def __init__(self, agent):
         self.agent = agent
 
-    def matches(self, user_input: str) -> bool:
-        """Check if input matches this command"""
-        return user_input.startswith(f"/{self.command}")
+    def slashs(self) -> list[str]:
+        return [self.command]
 
     def execute(self, user_input: str):
         """Execute command with given input"""
@@ -27,30 +26,45 @@ class Command:
 
 
 class FileCommand(Command):
-    command = "add"
-    description = "Add files to context - /add <file1> [file2...]"
+    description = (
+        "Add/Drop files to context - /add <file1> [file2...];  /drop <file1> [file2...]"
+    )
 
-    def __init__(self, agent):
-        super().__init__(agent)
-        self.files = []
-        self.workspace = self.agent.workspace
+    def __init__(self, files, workspace):
+        self.files = files
+        self.workspace = workspace
+
+    def slashs(self) -> list[str]:
+        return ["add", "drop"]
+
+    def normalize(self, path: str):
+        # normalize file path to relative to workspace if it's subtree of workspace, otherwise absolute.
+        p = Path(path)
+        if not p.is_absolute():
+            p = (self.workspace / p).absolute()
+        if p.is_relative_to(self.workspace):
+            p = p.relative_to(self.workspace)
+        return p
 
     def execute(self, user_input: str):
-        files = user_input.split()[1:]
+        splited = user_input.split()
+        command = splited[0][1:]
+        files = splited[1:]
         if not files:
-            print("Please specify files to add")
+            print("Please specify files.")
             return
-        for f in files:
-            # normalize file path to relative to workspace if it's subtree of workspace, otherwise absolute.
-            p = Path(f)
-            if not p.is_absolute():
-                p = (self.workspace / p).absolute()
-            if p.is_relative_to(self.workspace):
-                p = p.relative_to(self.workspace)
-            if p.exists():
-                self.files.append(p)
-            else:
-                logger.warning(f"{p} doesn't exist, ignoring.")
+        if command == "add":
+            for f in files:
+                p = self.normalize(f)
+                if p.exists():
+                    self.files.append(p)
+                else:
+                    logger.warning(f"{p} doesn't exist, ignoring.")
+        else:
+            for f in files:
+                p = self.normalize(f)
+                if p in self.files:
+                    self.files.remove(p)
 
 
 class ModelCommand(Command):

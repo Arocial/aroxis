@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from pathlib import Path
@@ -10,9 +11,8 @@ from kissllm.mcp import (
 from kissllm.mcp.manager import MCPManager
 from kissllm.tools import ToolManager
 
-from llmse6 import commands
 from llmse6.agents.prompt import SimplePromptManager
-from llmse6.commands import InvokeToolCommand, ListToolCommand
+from llmse6.commands import Command
 
 logger = logging.getLogger(__name__)
 
@@ -74,13 +74,31 @@ class LLMBaseAgent:
         else:
             self.tool_registry = None
 
-        self.commands = [
-            commands.FileCommand(self),
-            commands.ModelCommand(self),
-            InvokeToolCommand(self),
-            ListToolCommand(self),
-        ]
         self.prompt_manger = prompt_manager_cls(self)
+
+        self.command_map = {}
+
+    def register_in_chat_command(self, command: Command):
+        for s in command.slashs():
+            self.command_map[s] = command
+
+    async def try_execute_command(self, user_input: str):
+        command_executed = False
+        if not user_input.startswith("/"):
+            return command_executed
+
+        c = user_input.split(" ", 1)[0][1:]
+        command = self.command_map.get(c)
+        if command:
+            command_executed = True
+            # Commands might be async now
+            if asyncio.iscoroutinefunction(command.execute):
+                await command.execute(user_input)
+            else:
+                command.execute(user_input)
+        else:
+            print(f"Command not found: {user_input}")
+        return command_executed
 
     async def llm_node(self, input_content: str):
         messages = self.prompt_manger.assemble_prompt(input_content)
