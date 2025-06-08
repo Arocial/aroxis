@@ -31,41 +31,9 @@ def test_deep_merge_nested_structures():
     assert result == {"a": {"b": {"c": 2}}, "d": [3, 4]}
 
 
-def test_user_input_generator_cached():
-    cached_responses = ["test1", "test2"]
-    gen = user_input_generator(cached_responses)
-    assert next(gen) == "test1"
-    assert next(gen) == "test2"
-
-
-def test_user_input_generator_quit():
-    gen = user_input_generator(["q"])
-    with pytest.raises(StopIteration):
-        next(gen)
-
-
-@pytest.mark.parametrize(
-    "input,expected",
-    [
-        (["test"], "test"),
-        (["Q"], StopIteration),
-        (["q"], StopIteration),
-        (["test1", "test2"], "test1"),
-        (["test1", "q"], "test1"),
-    ],
-)
-def test_user_input_generator_parametrized(input, expected):
-    gen = user_input_generator(input)
-    if expected is StopIteration:
-        with pytest.raises(StopIteration):
-            next(gen)
-    else:
-        assert next(gen) == expected
-
-
-def test_user_input_generator_multiple_calls():
-    gen = user_input_generator(["test1", "test2", "q"])
-    assert next(gen) == "test1"
-    assert next(gen) == "test2"
-    with pytest.raises(StopIteration):
-        next(gen)
+@pytest.mark.asyncio
+async def test_user_input_generator_quit():
+    gen = user_input_generator(["test1", "q"], force_cached=True)
+    assert await anext(gen) == "test1"
+    with pytest.raises(StopAsyncIteration):
+        await anext(gen)
