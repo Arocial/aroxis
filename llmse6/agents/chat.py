@@ -15,9 +15,7 @@ class ChatAgent(LLMBaseAgent):
         super().__init__(name, config_parser, local_tool_manager, prompt_manager_cls)
 
         self.additional_files = []
-        self.register_in_chat_command(
-            commands.FileCommand(self.additional_files, self.workspace)
-        )
+        self.register_in_chat_command(commands.FileCommand(self))
         self.register_in_chat_command(commands.ModelCommand(self))
         self.register_in_chat_command(commands.InvokeToolCommand(self))
         self.register_in_chat_command(commands.ListToolCommand(self))

@@ -30,23 +30,21 @@ class FileCommand(Command):
         "Add/Drop files to context - /add <file1> [file2...];  /drop <file1> [file2...]"
     )
 
-    def __init__(self, files, workspace):
-        self.files = files
-        self.workspace = workspace
-
     def slashs(self) -> list[str]:
         return ["add", "drop"]
 
     def normalize(self, path: str):
+        workspace = self.agent.workspace
         # normalize file path to relative to workspace if it's subtree of workspace, otherwise absolute.
         p = Path(path)
         if not p.is_absolute():
-            p = (self.workspace / p).absolute()
-        if p.is_relative_to(self.workspace):
-            p = p.relative_to(self.workspace)
+            p = (workspace / p).absolute()
+        if p.is_relative_to(workspace):
+            p = p.relative_to(workspace)
         return p
 
     def execute(self, user_input: str):
+        all_files = self.agent.additional_files
         splited = user_input.split()
         command = splited[0][1:]
         files = splited[1:]
@@ -57,14 +55,14 @@ class FileCommand(Command):
             for f in files:
                 p = self.normalize(f)
                 if p.exists():
-                    self.files.append(p)
+                    all_files.append(p)
                 else:
                     logger.warning(f"{p} doesn't exist, ignoring.")
         else:
             for f in files:
                 p = self.normalize(f)
-                if p in self.files:
-                    self.files.remove(p)
+                if p in all_files:
+                    all_files.remove(p)
 
 
 class ModelCommand(Command):
