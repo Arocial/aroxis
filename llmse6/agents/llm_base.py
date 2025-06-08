@@ -74,7 +74,7 @@ class LLMBaseAgent:
         else:
             self.tool_registry = None
 
-        self.prompt_manger = prompt_manager_cls(self)
+        self.prompt_manager = prompt_manager_cls(self)
 
         self.command_map = {}
 
@@ -101,7 +101,7 @@ class LLMBaseAgent:
         return command_executed
 
     async def llm_node(self, input_content: str):
-        messages = self.prompt_manger.assemble_prompt(input_content)
+        messages = self.prompt_manager.assemble_prompt(input_content)
         self.model_params["stream"] = True
         await LLMClient(
             provider_model=self.provider_model, tool_registry=self.tool_registry
