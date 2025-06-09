@@ -69,10 +69,8 @@ class LLMBaseAgent:
             tool_managers["mcp_manager"] = MCPManager(mcp_configs)
         if local_tool_manager:
             tool_managers["local_manager"] = local_tool_manager
-        if tool_managers:
-            self.tool_registry = ToolManager(**tool_managers)
-        else:
-            self.tool_registry = None
+
+        self.tool_registry = ToolManager(**tool_managers)
 
         self.prompt_manager = prompt_manager_cls(self)
 
