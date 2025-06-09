@@ -20,7 +20,7 @@ class Command:
     def slashs(self) -> list[str]:
         return [self.command]
 
-    def execute(self, user_input: str):
+    def execute(self, name: str, arg: str):
         """Execute command with given input"""
         raise NotImplementedError
 
@@ -43,15 +43,13 @@ class FileCommand(Command):
             p = p.relative_to(workspace)
         return p
 
-    def execute(self, user_input: str):
+    def execute(self, name: str, arg: str):
         all_files = self.agent.additional_files
-        splited = user_input.split()
-        command = splited[0][1:]
-        files = splited[1:]
+        files = arg.split(" ")
         if not files:
             print("Please specify files.")
             return
-        if command == "add":
+        if name == "add":
             for f in files:
                 p = self.normalize(f)
                 if p.exists():
@@ -69,12 +67,10 @@ class ModelCommand(Command):
     command = "model"
     description = "Switch LLM model - /model <model_name>"
 
-    def execute(self, user_input: str):
-        parts = user_input.split()
-        if len(parts) < 2:
+    def execute(self, name: str, new_model: str):
+        if not new_model:
             print("Please specify a model name")
             return
-        new_model = parts[1]
         self.agent.provider_model = new_model
         print(f"Switched to model: {new_model}")
 
@@ -88,9 +84,8 @@ class SaveCommand(Command):
         self.tag_name = tag_name or f"{agent.name}_content"
         self.default_file = default_file or f"{agent.name}_output.md"
 
-    def execute(self, user_input: str):
-        parts = user_input.split()
-        output_file = parts[1] if len(parts) > 1 else self.default_file
+    def execute(self, name: str, arg: str):
+        output_file = arg if arg else self.default_file
         last_message = self.agent.state["messages"][-1]
         self._save_content(last_message.content, self.tag_name, output_file)
         print(f"Saved to {output_file}!")
@@ -117,16 +112,16 @@ class InvokeToolCommand(Command):
     command = "invoke-tool"
     description = "Invoke a registered tool - /invoke-tool <function_name> [json_args]"
 
-    async def execute(self, user_input: str):
+    async def execute(self, name: str, arg: str):
         tool_registry = self.agent.tool_registry
 
-        parts = user_input.split(maxsplit=2)
-        if len(parts) < 2:
+        parts = arg.split(maxsplit=1)
+        if len(parts) < 1:
             print("Usage: /invoke-tool <function_name> [json_args]")
             return
 
-        function_name = parts[1]
-        args_str = parts[2] if len(parts) > 2 else "{}"
+        function_name = parts[0]
+        args_str = parts[0] if len(parts) > 1 else "{}"
 
         try:
             args = json.loads(args_str)
@@ -168,7 +163,7 @@ class ListToolCommand(Command):
     command = "list-tools"
     description = "List all registered tools"
 
-    async def execute(self, user_input: str):
+    async def execute(self, name: str, arg: str):
         tool_registry = self.agent.tool_registry
         tool_specs = tool_registry.get_tools_specs()
         if not tool_specs:

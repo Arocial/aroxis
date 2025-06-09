@@ -82,23 +82,23 @@ class LLMBaseAgent:
         for s in command.slashs():
             self.command_map[s] = command
 
-    async def try_execute_command(self, user_input: str):
-        command_executed = False
+    async def try_execute_command(self, user_input: str) -> bool:
         if not user_input.startswith("/"):
-            return command_executed
+            return False
 
-        c = user_input.split(" ", 1)[0][1:]
-        command = self.command_map.get(c)
+        cmd = user_input.split(" ", 1)
+        c_name = cmd[0][1:]
+        c_arg = cmd[1] if len(cmd) > 1 else ""
+        command = self.command_map.get(c_name)
         if command:
-            command_executed = True
             # Commands might be async now
             if asyncio.iscoroutinefunction(command.execute):
-                await command.execute(user_input)
+                await command.execute(c_name, c_arg)
             else:
-                command.execute(user_input)
+                command.execute(c_name, c_arg)
         else:
             print(f"Command not found: {user_input}")
-        return command_executed
+        return True
 
     async def llm_node(self, input_content: str):
         messages = self.prompt_manager.assemble_prompt(input_content)
