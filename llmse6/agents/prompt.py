@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -13,16 +14,16 @@ class SimplePromptManager:
             self.messages = [{"role": "system", "content": self.system_prompt}]
         self.workspace = self.agent.workspace
 
-    def assemble_additional_files(self) -> tuple[str, list[str]]:
+    def assemble_additional_files(self) -> tuple[str, list[Path]]:
         file_content = ""
-        file_names = []
+        fpaths = []
         additional_files = getattr(self, "agent.additional_files", [])
         for fname in additional_files:
             p = fname if fname.is_absolute() else self.workspace + fname
             try:
                 with open(p, "r") as f:
                     content = f.read()
-                    file_names.append(fname)
+                    fpaths.append(fname)
                     logger.debug(f"Adding content from {fname}")
                     file_content = (
                         f"\n====FILE:{fname}====\n{content}\n\n{file_content}"
@@ -30,7 +31,7 @@ class SimplePromptManager:
             except FileNotFoundError:
                 print(f"File not found: {p}")
                 continue
-        return file_content, file_names
+        return file_content, fpaths
 
     def assemble_prompt(self, user_input: str):
         messages = self.messages
