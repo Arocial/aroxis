@@ -17,7 +17,7 @@ class SimplePromptManager:
     def assemble_additional_files(self) -> tuple[str, list[Path]]:
         file_content = ""
         fpaths = []
-        additional_files = getattr(self, "agent.additional_files", [])
+        additional_files = getattr(self.agent, "additional_files", [])
         for fname in additional_files:
             p = fname if fname.is_absolute() else self.workspace + fname
             try:

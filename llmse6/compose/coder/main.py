@@ -13,7 +13,7 @@ from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit
 from llmse6.utils import user_input_generator
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
