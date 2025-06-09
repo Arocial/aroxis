@@ -13,6 +13,7 @@ There may be context provided for you:
 
 # Editing Files
 - ALWAYS use the provided tools to edit files: `write_to_file` and `replace_in_file`.
+- If `replace_in_file` did not successfully update the content, use `write_to_file` instead.
 - When editing existing files, you should read them before editing.
 
 """
