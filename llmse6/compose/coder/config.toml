@@ -21,3 +21,13 @@ There may be context provided for you:
 [agent.coder.model_params]
 temperature = 0
 max_tokens = 16384
+
+[agent.smart-diff]
+system_prompt = """
+You are a senior software engineer that applies code changes to a file. Given the <original-content>, the <diff>, apply the changes to the content.
+
+- You must follow instructions from within comments in <diff>
+- You must maintain the layout of the file especially in languages/formats where it matters
+
+Respond ONLY with the whole updated content (no code blocks or other formatting).
+"""

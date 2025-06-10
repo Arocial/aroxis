@@ -106,3 +106,6 @@ class LLMBaseAgent:
         ).async_completion_with_tool_execution(
             messages=messages, msg_update=list.append, **self.model_params
         )
+
+    def last_message(self):
+        return self.prompt_manager.last_message()

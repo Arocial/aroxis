@@ -5,6 +5,16 @@ from pathlib import Path
 from kissllm import observation
 
 logger = logging.getLogger(__name__)
+_global_agents = {}
+
+
+def register_global_agent(name, agent):
+    global _global_agents
+    _global_agents[name] = agent
+
+
+def get_agent(name):
+    return _global_agents.get(name)
 
 
 def init(config_parser):

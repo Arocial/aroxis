@@ -8,6 +8,7 @@ from kissllm.tools import LocalToolManager
 
 from llmse6 import agents
 from llmse6.agents.chat import ChatAgent
+from llmse6.agents.llm_base import LLMBaseAgent
 from llmse6.compose.coder.prompt import CoderPromptManager
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit
@@ -33,6 +34,8 @@ async def main():
     agents.init(toml_parser)
     local_tool_manager = LocalToolManager()
     file_edit.register_tools(local_tool_manager)
+
+    agents.register_global_agent("smart-diff", LLMBaseAgent("smart-diff", toml_parser))
 
     coder_agent = ChatAgent(
         "coder", toml_parser, local_tool_manager, CoderPromptManager

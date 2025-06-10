@@ -1,51 +1,56 @@
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from llmse6.tools.file_edit import (
-    _find_with_placeholder,
     replace_in_file,
     write_to_file,
 )
 
 
 class TestFileEdit:
-    def test_write_to_file_new_file(self):
+    @pytest.mark.asyncio
+    async def test_write_to_file_new_file(self):
         """Test writing to a new file"""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "test.txt"
             content = "Hello, World!"
 
-            result = write_to_file(str(file_path), content)
+            result = await write_to_file(str(file_path), content)
 
             assert "Successfully wrote to" in result
             assert file_path.exists()
             assert file_path.read_text() == content
 
-    def test_write_to_file_overwrite(self):
+    @pytest.mark.asyncio
+    async def test_write_to_file_overwrite(self):
         """Test overwriting an existing file"""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "test.txt"
             file_path.write_text("Original content")
 
             new_content = "New content"
-            result = write_to_file(str(file_path), new_content)
+            result = await write_to_file(str(file_path), new_content)
 
             assert "Successfully wrote to" in result
             assert file_path.read_text() == new_content
 
-    def test_write_to_file_create_directories(self):
+    @pytest.mark.asyncio
+    async def test_write_to_file_create_directories(self):
         """Test creating directories when they don't exist"""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "subdir" / "test.txt"
             content = "Test content"
 
-            result = write_to_file(str(file_path), content)
+            result = await write_to_file(str(file_path), content)
 
             assert "Successfully wrote to" in result
             assert file_path.exists()
             assert file_path.read_text() == content
 
-    def test_replace_in_file_simple(self):
+    @pytest.mark.asyncio
+    async def test_replace_in_file_simple(self):
         """Test simple content replacement"""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "test.py"
@@ -62,14 +67,15 @@ import yaml
 import json
 >>>>>>> REPLACE"""
 
-            result = replace_in_file(str(file_path), diff)
+            result = await replace_in_file(str(file_path), diff)
 
             assert "Successfully updated" in result
             updated_content = file_path.read_text()
             assert "import json" in updated_content
             assert "import yaml" not in updated_content
 
-    def test_replace_in_file_with_placeholder(self):
+    @pytest.mark.asyncio
+    async def test_replace_in_file_with_placeholder(self):
         """Test replacement with ...existing code... placeholder"""
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "test.py"
@@ -92,7 +98,7 @@ import json
 from pathlib import Path
 >>>>>>> REPLACE"""
 
-            result = replace_in_file(str(file_path), diff)
+            result = await replace_in_file(str(file_path), diff)
 
             assert "Successfully updated" in result
             updated_content = file_path.read_text()
@@ -100,23 +106,8 @@ from pathlib import Path
             assert "import yaml" not in updated_content
             assert "def test():" in updated_content  # Should preserve content after
 
-    def test_replace_in_file_not_found(self):
-        """Test replacement when search content is not found"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_path = Path(temp_dir) / "test.py"
-            file_path.write_text("import os")
-
-            diff = """<<<<<<< SEARCH
-import yaml
-=======
-import json
->>>>>>> REPLACE"""
-
-            result = replace_in_file(str(file_path), diff)
-
-            assert "Search content not found" in result
-
-    def test_replace_in_file_nonexistent(self):
+    @pytest.mark.asyncio
+    async def test_replace_in_file_nonexistent(self):
         """Test replacement on non-existent file"""
-        result = replace_in_file("/nonexistent/file.py", "some diff")
+        result = await replace_in_file("/nonexistent/file.py", "some diff")
         assert "File not found" in result

@@ -52,3 +52,11 @@ def user_input_generator(
             yield user_input
 
     return wrapper()
+
+
+def xml_wrap(contents: list[tuple[str, str]]) -> str:
+    xmled = []
+    for tag, content in contents:
+        if content is not None:
+            xmled.append(f"<{tag}>\n{content}\n</{tag}>\n")
+    return "\n".join(xmled)

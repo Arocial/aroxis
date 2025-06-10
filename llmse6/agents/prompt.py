@@ -40,3 +40,9 @@ class SimplePromptManager:
         messages.append({"role": "user", "content": user_input})
 
         return messages
+
+    def last_message(self) -> str:
+        if self.messages and "content" in self.messages[-1]:
+            return self.messages[-1]["content"]
+        else:
+            return ""
