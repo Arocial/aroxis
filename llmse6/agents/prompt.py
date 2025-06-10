@@ -10,15 +10,17 @@ class SimplePromptManager:
         self.agent = agent
         self.system_prompt = self.agent.system_prompt
         self.messages: List[Dict[str, Any]] = []
-        if self.system_prompt:
-            self.messages = [{"role": "system", "content": self.system_prompt}]
         self.workspace = self.agent.workspace
+        self.reset()
 
-    def assemble_additional_files(self) -> tuple[str, list[Path]]:
+    def assemble_chat_files(self) -> tuple[str, list[Path]]:
         file_content = ""
         fpaths = []
-        additional_files = getattr(self.agent, "additional_files", [])
-        for fname in additional_files:
+        chat_files = getattr(self.agent, "chat_files")
+        if not chat_files:
+            return "", []
+
+        for fname in chat_files.list():
             p = fname if fname.is_absolute() else self.workspace + fname
             try:
                 with open(p, "r") as f:
@@ -35,7 +37,7 @@ class SimplePromptManager:
 
     def assemble_prompt(self, user_input: str):
         messages = self.messages
-        file_contents, _ = self.assemble_additional_files()
+        file_contents, _ = self.assemble_chat_files()
         user_input = file_contents + user_input
         messages.append({"role": "user", "content": user_input})
 
@@ -46,3 +48,7 @@ class SimplePromptManager:
             return self.messages[-1]["content"]
         else:
             return ""
+
+    def reset(self):
+        if self.system_prompt:
+            self.messages = [{"role": "system", "content": self.system_prompt}]

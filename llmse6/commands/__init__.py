@@ -44,7 +44,7 @@ class FileCommand(Command):
         return p
 
     def execute(self, name: str, arg: str):
-        all_files = self.agent.additional_files
+        chat_files = self.agent.chat_files
         files = arg.split(" ")
         if not files:
             print("Please specify files.")
@@ -53,14 +53,13 @@ class FileCommand(Command):
             for f in files:
                 p = self.normalize(f)
                 if p.exists():
-                    all_files.append(p)
+                    chat_files.add(p)
                 else:
                     logger.warning(f"{p} doesn't exist, ignoring.")
         else:
             for f in files:
                 p = self.normalize(f)
-                if p in all_files:
-                    all_files.remove(p)
+                chat_files.remove(p)
 
 
 class ModelCommand(Command):
@@ -172,3 +171,15 @@ class ListToolCommand(Command):
 
         print("Registered Tools:")
         print(yaml.safe_dump(tool_specs))
+
+
+class ResetCommand(Command):
+    command = "reset"
+    description = "Reset chat history and chat files - /reset"
+
+    def execute(self, name: str, arg: str):
+        self.agent.prompt_manager.reset()
+        if hasattr(self.agent, "chat_files"):
+            self.agent.chat_files.clear()
+
+        print("Reset complete.")

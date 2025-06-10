@@ -14,7 +14,7 @@ class CoderPromptManager(SimplePromptManager):
 
     def assemble_prompt(self, user_input: str):
         messages = self.messages
-        file_contents, chat_files = self.assemble_additional_files()
+        file_contents, chat_files = self.assemble_chat_files()
         repo_map = self.pm.get_repo_map(chat_files)
 
         input_content = xml_wrap(
