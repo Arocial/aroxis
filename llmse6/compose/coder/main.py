@@ -9,6 +9,7 @@ from kissllm.tools import LocalToolManager
 from llmse6 import agents
 from llmse6.agents.chat import ChatAgent
 from llmse6.agents.llm_base import LLMBaseAgent
+from llmse6.commands import CommandCompleter
 from llmse6.compose.coder.prompt import CoderPromptManager
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit
@@ -50,7 +51,11 @@ async def main():
     test_user_msg = []
     logger.debug("Starting coder agent")
     await coder_agent.start(
-        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
+        user_input_generator(
+            completer=CommandCompleter(coder_agent.command_manager),
+            cached_human_responses=test_user_msg,
+            force_cached=False,
+        )
     )
 
 

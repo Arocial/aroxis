@@ -4,8 +4,43 @@ import re
 from pathlib import Path
 
 import yaml
+from prompt_toolkit.completion import Completer, Completion
 
 logger = logging.getLogger(__name__)
+
+
+def parse_cmdline(cmdline):
+    if not cmdline.startswith("/"):
+        return None, None
+
+    cmd = cmdline.split(" ", 1)
+    c_name = cmd[0][1:]
+    c_arg = cmd[1] if len(cmd) > 1 else None
+    return c_name, c_arg
+
+
+class CommandCompleter(Completer):
+    """Main completer that delegates to specific command completers"""
+
+    def __init__(self, manager):
+        self.command_manager = manager
+
+    def get_completions(self, document, complete_event):
+        text = document.text
+
+        name, args = parse_cmdline(text)
+        if not name:
+            return
+        if args is None:  # Complete command names
+            candidates = self.command_manager.command_names()
+            for candidate in candidates:
+                if name in candidate:
+                    yield Completion(
+                        candidate, start_position=-len(name), display=candidate
+                    )
+            return
+
+        yield from self.command_manager.get_completions(name, args, document)
 
 
 class Command:
@@ -60,6 +95,41 @@ class FileCommand(Command):
             for f in files:
                 p = self.normalize(f)
                 chat_files.remove(p)
+
+    def get_completions(self, name, args, document):
+        # Parse the arguments to get the current word being completed
+        if not args:
+            current_word = ""
+        else:
+            parts = args.split()
+            if args.endswith(" "):
+                current_word = ""
+            else:
+                current_word = parts[-1] if parts else ""
+
+        if name == "add":
+            candidates = self._get_git_tracked_files()
+        elif name == "drop":
+            candidates = self._get_chat_files()
+        else:
+            candidates = []
+
+        # Filter candidates based on current word
+        for candidate in candidates:
+            if current_word in candidate:
+                yield Completion(
+                    candidate, start_position=-len(current_word), display=candidate
+                )
+
+    def _get_git_tracked_files(self):
+        if hasattr(self.agent.prompt_manager, "project_manager"):
+            return self.agent.prompt_manager.project_manager.get_tracked_files()
+
+    def _get_chat_files(self):
+        """Get list of files currently in chat_files"""
+        if hasattr(self.agent, "chat_files"):
+            return sorted([str(f) for f in self.agent.chat_files.list()])
+        return []
 
 
 class ModelCommand(Command):

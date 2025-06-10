@@ -22,7 +22,10 @@ def parse_dict(value: str) -> dict:
 
 
 def user_input_generator(
-    cached_human_responses=[], cached_response_index=0, force_cached=False
+    cached_human_responses=[],
+    cached_response_index=0,
+    force_cached=False,
+    completer=None,
 ):
     """Async generator that yields user input"""
 
@@ -33,6 +36,7 @@ def user_input_generator(
             history=history,
             auto_suggest=AutoSuggestFromHistory(),
             mouse_support=False,
+            completer=completer,
         )
         while True:
             try:

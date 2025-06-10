@@ -25,7 +25,15 @@ class ProjectManager:
         return res or ""
 
     def calcute_other_files(self, chat_files):
-        repo = git.Repo(self.workspace)
-        tracked_files = set(repo.git.ls_files().splitlines())
+        tracked_files = set(self.get_tracked_files())
         other_files = tracked_files - set(chat_files)
         return list(other_files)
+
+    def get_tracked_files(self):
+        try:
+            repo = git.Repo(self.workspace)
+            tracked_files = repo.git.ls_files().splitlines()
+            return sorted(tracked_files)
+        except (git.InvalidGitRepositoryError, git.GitCommandError) as e:
+            logger.warning(f"Failed to get git tracked files: {e}")
+            return []
