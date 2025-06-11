@@ -1,30 +1,8 @@
-from pathlib import Path
-
 from llmse6 import commands
 from llmse6.agents.llm_base import LLMBaseAgent
 from llmse6.agents.prompt import SimplePromptManager
 from llmse6.commands.manager import CommandManager
 from llmse6.utils import user_input_generator
-
-
-class ChatFiles:
-    def __init__(self) -> None:
-        self._chat_files = []
-
-    def add(self, f: Path):
-        self._chat_files.append(f)
-
-    def remove(self, f: Path):
-        if f in self._chat_files:
-            self._chat_files.remove(f)
-        else:
-            print(f"{f} is not in chat file list, ignoring.")
-
-    def clear(self):
-        self._chat_files.clear()
-
-    def list(self):
-        return self._chat_files
 
 
 class ChatAgent(LLMBaseAgent):
@@ -37,7 +15,6 @@ class ChatAgent(LLMBaseAgent):
     ):
         super().__init__(name, config_parser, local_tool_manager, prompt_manager_cls)
 
-        self.chat_files = ChatFiles()
         self.command_manager = CommandManager(self)
         self.command_manager.register_commands(
             [

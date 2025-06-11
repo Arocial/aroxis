@@ -11,6 +11,7 @@ class CoderPromptManager(SimplePromptManager):
     def __init__(self, agent):
         super().__init__(agent)
         self.project_manager = project.ProjectManager(self.workspace)
+        self.chat_files.set_candidate_generator(self.project_manager.get_tracked_files)
 
     def assemble_prompt(self, user_input: str):
         messages = self.messages

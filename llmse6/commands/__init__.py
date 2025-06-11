@@ -79,7 +79,7 @@ class FileCommand(Command):
         return p
 
     def execute(self, name: str, arg: str):
-        chat_files = self.agent.chat_files
+        chat_files = self.agent.prompt_manager.chat_files
         files = arg.split(" ")
         if not files:
             print("Please specify files.")
@@ -108,9 +108,9 @@ class FileCommand(Command):
                 current_word = parts[-1] if parts else ""
 
         if name == "add":
-            candidates = self._get_git_tracked_files()
+            candidates = self.agent.prompt_manager.chat_files.candidates()
         elif name == "drop":
-            candidates = self._get_chat_files()
+            candidates = [str(f) for f in self.agent.prompt_manager.chat_files.list()]
         else:
             candidates = []
 
@@ -120,16 +120,6 @@ class FileCommand(Command):
                 yield Completion(
                     candidate, start_position=-len(current_word), display=candidate
                 )
-
-    def _get_git_tracked_files(self):
-        if hasattr(self.agent.prompt_manager, "project_manager"):
-            return self.agent.prompt_manager.project_manager.get_tracked_files()
-
-    def _get_chat_files(self):
-        """Get list of files currently in chat_files"""
-        if hasattr(self.agent, "chat_files"):
-            return sorted([str(f) for f in self.agent.chat_files.list()])
-        return []
 
 
 class ModelCommand(Command):
@@ -249,7 +239,4 @@ class ResetCommand(Command):
 
     def execute(self, name: str, arg: str):
         self.agent.prompt_manager.reset()
-        if hasattr(self.agent, "chat_files"):
-            self.agent.chat_files.clear()
-
         print("Reset complete.")
