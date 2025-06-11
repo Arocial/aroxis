@@ -10,7 +10,7 @@ from kissllm.mcp import (
 from kissllm.mcp.manager import MCPManager
 from kissllm.tools import ToolManager
 
-from llmse6.agents.prompt import SimplePromptManager
+from llmse6.agents.state import SimpleState
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class LLMBaseAgent:
         name,
         config_parser,
         local_tool_manager=None,
-        prompt_manager_cls=SimplePromptManager,
+        state_cls=SimpleState,
     ):
         self.uuid = str(uuid.uuid4())
         self.name = name
@@ -72,10 +72,10 @@ class LLMBaseAgent:
 
         self.tool_registry = ToolManager(**tool_managers)
 
-        self.prompt_manager = prompt_manager_cls(self)
+        self.state = state_cls(self)
 
     async def llm_node(self, input_content: str):
-        messages = self.prompt_manager.assemble_prompt(input_content)
+        messages = self.state.assemble_prompt(input_content)
         self.model_params["stream"] = True
         await LLMClient(
             provider_model=self.provider_model, tool_registry=self.tool_registry
@@ -84,4 +84,4 @@ class LLMBaseAgent:
         )
 
     def last_message(self):
-        return self.prompt_manager.last_message()
+        return self.state.last_message()

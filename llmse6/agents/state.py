@@ -34,7 +34,7 @@ class ChatFiles:
         return self.candidate_generator()
 
 
-class SimplePromptManager:
+class SimpleState:
     def __init__(self, agent):
         self.agent = agent
         self.system_prompt = self.agent.system_prompt

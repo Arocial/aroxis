@@ -45,7 +45,7 @@ class GitCommitAgent(LLMBaseAgent):
 
         # Call the LLM to generate the commit message
         await self.llm_node(prompt)
-        last_message = self.prompt_manager.messages[-1]["content"]
+        last_message = self.state.messages[-1]["content"]
         return last_message.strip()
 
     async def commit_changes(self, message: Optional[str] = None) -> str:

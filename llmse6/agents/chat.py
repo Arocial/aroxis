@@ -1,6 +1,6 @@
 from llmse6 import commands
 from llmse6.agents.llm_base import LLMBaseAgent
-from llmse6.agents.prompt import SimplePromptManager
+from llmse6.agents.state import SimpleState
 from llmse6.commands.manager import CommandManager
 from llmse6.utils import user_input_generator
 
@@ -11,9 +11,9 @@ class ChatAgent(LLMBaseAgent):
         name,
         config_parser=None,
         local_tool_manager=None,
-        prompt_manager_cls=SimplePromptManager,
+        state_cls=SimpleState,
     ):
-        super().__init__(name, config_parser, local_tool_manager, prompt_manager_cls)
+        super().__init__(name, config_parser, local_tool_manager, state_cls)
 
         self.command_manager = CommandManager(self)
         self.command_manager.register_commands(

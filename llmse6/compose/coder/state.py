@@ -1,13 +1,13 @@
 import logging
 
-from llmse6.agents.prompt import SimplePromptManager
+from llmse6.agents.state import SimpleState
 from llmse6.codebase import project
 from llmse6.utils import xml_wrap
 
 logger = logging.getLogger(__name__)
 
 
-class CoderPromptManager(SimplePromptManager):
+class CoderState(SimpleState):
     def __init__(self, agent):
         super().__init__(agent)
         self.project_manager = project.ProjectManager(self.workspace)
@@ -27,6 +27,6 @@ class CoderPromptManager(SimplePromptManager):
         )
 
         messages.append({"role": "user", "content": input_content})
-        logger.info(f"User Prompt:\n{input_content}")
+        logger.debug(f"User Prompt:\n{input_content}")
 
         return messages

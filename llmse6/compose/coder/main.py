@@ -10,7 +10,7 @@ from llmse6 import agents
 from llmse6.agents.chat import ChatAgent
 from llmse6.agents.llm_base import LLMBaseAgent
 from llmse6.commands import CommandCompleter
-from llmse6.compose.coder.prompt import CoderPromptManager
+from llmse6.compose.coder.state import CoderState
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit
 from llmse6.utils import user_input_generator
@@ -39,9 +39,7 @@ async def main():
     file_edit_tool = file_edit.FileEdit(diff_agent)
     file_edit_tool.register_tools(local_tool_manager)
 
-    coder_agent = ChatAgent(
-        "coder", toml_parser, local_tool_manager, CoderPromptManager
-    )
+    coder_agent = ChatAgent("coder", toml_parser, local_tool_manager, CoderState)
 
     if args.dump_default_config:
         logger.debug(f"Dumping default config to {args.dump_default_config}")

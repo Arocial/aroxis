@@ -79,7 +79,7 @@ class FileCommand(Command):
         return p
 
     def execute(self, name: str, arg: str):
-        chat_files = self.agent.prompt_manager.chat_files
+        chat_files = self.agent.state.chat_files
         files = arg.split(" ")
         if not files:
             print("Please specify files.")
@@ -108,9 +108,9 @@ class FileCommand(Command):
                 current_word = parts[-1] if parts else ""
 
         if name == "add":
-            candidates = self.agent.prompt_manager.chat_files.candidates()
+            candidates = self.agent.state.chat_files.candidates()
         elif name == "drop":
-            candidates = [str(f) for f in self.agent.prompt_manager.chat_files.list()]
+            candidates = [str(f) for f in self.agent.state.chat_files.list()]
         else:
             candidates = []
 
@@ -238,5 +238,5 @@ class ResetCommand(Command):
     description = "Reset chat history and chat files - /reset"
 
     def execute(self, name: str, arg: str):
-        self.agent.prompt_manager.reset()
+        self.agent.state.reset()
         print("Reset complete.")

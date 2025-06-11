@@ -40,7 +40,7 @@ def user_input_generator(
             event.current_buffer.validate_and_handle()
 
         @kb.add("escape", "enter")  # Alt+Enter newline
-        @kb.add('escape', 'O', 'M')  # Shift+Enter (at least in my konsole)
+        @kb.add("escape", "O", "M")  # Shift+Enter (at least in my konsole)
         def _(event):
             event.current_buffer.insert_text("\n")
 
