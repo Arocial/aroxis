@@ -2,6 +2,7 @@ import yaml
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding.key_bindings import KeyBindings
 
 
 def deep_merge(source, overrides):
@@ -32,7 +33,21 @@ def user_input_generator(
     async def wrapper():
         nonlocal cached_response_index
         history = FileHistory(".llmse6_history")
+        kb = KeyBindings()
+
+        @kb.add("enter")
+        def _(event):  # Enter to submit
+            event.current_buffer.validate_and_handle()
+
+        @kb.add("escape", "enter")  # Alt+Enter newline
+        @kb.add('escape', 'O', 'M')  # Shift+Enter (at least in my konsole)
+        def _(event):
+            event.current_buffer.insert_text("\n")
+
         session = PromptSession(
+            prompt_continuation="> ",
+            multiline=True,
+            key_bindings=kb,
             history=history,
             auto_suggest=AutoSuggestFromHistory(),
             mouse_support=False,
