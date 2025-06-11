@@ -233,6 +233,25 @@ class ListToolCommand(Command):
         print(yaml.safe_dump(tool_specs))
 
 
+class InfoCommand(Command):
+    command = "info"
+    description = "Show current chat files and model in use - /info"
+
+    def execute(self, name: str, arg: str):
+        # Show current model
+        current_model = getattr(self.agent, "provider_model", "Unknown")
+        print(f"Current model: {current_model}")
+
+        # Show chat files
+        chat_files = self.agent.state.chat_files.list()
+        if chat_files:
+            print(f"\nChat files ({len(chat_files)}):")
+            for file_path in chat_files:
+                print(f"  - {file_path}")
+        else:
+            print("\nNo chat files currently loaded.")
+
+
 class ResetCommand(Command):
     command = "reset"
     description = "Reset chat history and chat files - /reset"

@@ -24,6 +24,7 @@ class ChatAgent(LLMBaseAgent):
                 commands.ListToolCommand(self),
                 commands.SaveCommand(self),
                 commands.ResetCommand(self),
+                commands.InfoCommand(self),
             ]
         )
 
