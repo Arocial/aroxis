@@ -80,7 +80,9 @@ class LLMBaseAgent:
         await LLMClient(
             provider_model=self.provider_model, tool_registry=self.tool_registry
         ).async_completion_with_tool_execution(
-            messages=messages, msg_update=list.append, **self.model_params
+            messages=messages,
+            handle_response=self.state.handle_response,
+            **self.model_params,
         )
 
     def last_message(self):

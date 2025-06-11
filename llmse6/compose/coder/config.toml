@@ -20,7 +20,6 @@ There may be context provided for you:
 
 [agent.coder.model_params]
 temperature = 0
-max_tokens = 16384
 
 [agent.smart-diff]
 system_prompt = """

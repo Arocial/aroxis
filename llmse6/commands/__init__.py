@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from pathlib import Path
 
 import yaml
 from prompt_toolkit.completion import Completer, Completion
@@ -68,16 +67,6 @@ class FileCommand(Command):
     def slashs(self) -> list[str]:
         return ["add", "drop"]
 
-    def normalize(self, path: str):
-        workspace = self.agent.workspace
-        # normalize file path to relative to workspace if it's subtree of workspace, otherwise absolute.
-        p = Path(path)
-        if not p.is_absolute():
-            p = (workspace / p).absolute()
-        if p.is_relative_to(workspace):
-            p = p.relative_to(workspace)
-        return p
-
     def execute(self, name: str, arg: str):
         chat_files = self.agent.state.chat_files
         files = arg.split(" ")
@@ -86,14 +75,14 @@ class FileCommand(Command):
             return
         if name == "add":
             for f in files:
-                p = self.normalize(f)
+                p = chat_files.normalize(f)
                 if p.exists():
                     chat_files.add(p)
                 else:
                     logger.warning(f"{p} doesn't exist, ignoring.")
         else:
             for f in files:
-                p = self.normalize(f)
+                p = chat_files.normalize(f)
                 chat_files.remove(p)
 
     def get_completions(self, name, args, document):
