@@ -34,9 +34,10 @@ async def main():
     toml_parser = TomlConfigParser(config_files=[default_agent_config])
     agents.init(toml_parser)
     local_tool_manager = LocalToolManager()
-    file_edit.register_tools(local_tool_manager)
 
-    agents.register_global_agent("smart-diff", LLMBaseAgent("smart-diff", toml_parser))
+    diff_agent = LLMBaseAgent("smart-diff", toml_parser)
+    file_edit_tool = file_edit.FileEdit(diff_agent)
+    file_edit_tool.register_tools(local_tool_manager)
 
     coder_agent = ChatAgent(
         "coder", toml_parser, local_tool_manager, CoderPromptManager

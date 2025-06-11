@@ -3,13 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from llmse6.tools.file_edit import (
-    replace_in_file,
-    write_to_file,
-)
+from llmse6.tools.file_edit import FileEdit
 
 
 class TestFileEdit:
+    @classmethod
+    def setup_class(cls):
+        cls.tool = FileEdit(None)
+
     @pytest.mark.asyncio
     async def test_write_to_file_new_file(self):
         """Test writing to a new file"""
@@ -17,7 +18,7 @@ class TestFileEdit:
             file_path = Path(temp_dir) / "test.txt"
             content = "Hello, World!"
 
-            result = await write_to_file(str(file_path), content)
+            result = await self.tool.write_to_file(str(file_path), content)
 
             assert "Successfully wrote to" in result
             assert file_path.exists()
@@ -31,7 +32,7 @@ class TestFileEdit:
             file_path.write_text("Original content")
 
             new_content = "New content"
-            result = await write_to_file(str(file_path), new_content)
+            result = await self.tool.write_to_file(str(file_path), new_content)
 
             assert "Successfully wrote to" in result
             assert file_path.read_text() == new_content
@@ -43,7 +44,7 @@ class TestFileEdit:
             file_path = Path(temp_dir) / "subdir" / "test.txt"
             content = "Test content"
 
-            result = await write_to_file(str(file_path), content)
+            result = await self.tool.write_to_file(str(file_path), content)
 
             assert "Successfully wrote to" in result
             assert file_path.exists()
@@ -67,7 +68,7 @@ import yaml
 import json
 >>>>>>> REPLACE"""
 
-            result = await replace_in_file(str(file_path), diff)
+            result = await self.tool.replace_in_file(str(file_path), diff)
 
             assert "Successfully updated" in result
             updated_content = file_path.read_text()
@@ -98,7 +99,7 @@ import json
 from pathlib import Path
 >>>>>>> REPLACE"""
 
-            result = await replace_in_file(str(file_path), diff)
+            result = await self.tool.replace_in_file(str(file_path), diff)
 
             assert "Successfully updated" in result
             updated_content = file_path.read_text()
@@ -109,5 +110,5 @@ from pathlib import Path
     @pytest.mark.asyncio
     async def test_replace_in_file_nonexistent(self):
         """Test replacement on non-existent file"""
-        result = await replace_in_file("/nonexistent/file.py", "some diff")
+        result = await self.tool.replace_in_file("/nonexistent/file.py", "some diff")
         assert "File not found" in result
