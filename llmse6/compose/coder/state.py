@@ -24,7 +24,7 @@ class CoderState(SimpleState):
             items.insert(insert_index, ("repo_map", repo_map))
             self.message_meta["repo_map"] = True
         if not self.message_meta.get("file_list"):
-            file_list = self.project_manager.get_tracked_files()
+            file_list = "\n".join(self.project_manager.get_tracked_files())
             items.insert(insert_index, ("file_list", file_list))
             self.message_meta["file_list"] = True
         return items
