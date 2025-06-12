@@ -12,8 +12,11 @@ class ChatAgent(LLMBaseAgent):
         config_parser=None,
         local_tool_manager=None,
         state_cls=SimpleState,
+        context={},
     ):
-        super().__init__(name, config_parser, local_tool_manager, state_cls)
+        super().__init__(
+            name, config_parser, local_tool_manager, state_cls, context=context
+        )
 
         self.command_manager = CommandManager(self)
         self.command_manager.register_commands(
@@ -25,6 +28,7 @@ class ChatAgent(LLMBaseAgent):
                 commands.SaveCommand(self),
                 commands.ResetCommand(self),
                 commands.InfoCommand(self),
+                commands.CommitCommand(self),
             ]
         )
 

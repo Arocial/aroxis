@@ -22,9 +22,11 @@ class LLMBaseAgent:
         config_parser,
         local_tool_manager=None,
         state_cls=SimpleState,
+        context={},
     ):
         self.uuid = str(uuid.uuid4())
         self.name = name
+        self.context = context
 
         agent_group = config_parser.add_argument_group(name=f"agent.{name}")
         agent_group.add_argument("system_prompt", default="")

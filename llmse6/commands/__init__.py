@@ -5,6 +5,8 @@ import re
 import yaml
 from prompt_toolkit.completion import Completer, Completion
 
+from llmse6.agents.git_commit import GitCommitAgent as GitCommitAgent
+
 logger = logging.getLogger(__name__)
 
 
@@ -248,3 +250,15 @@ class ResetCommand(Command):
     def execute(self, name: str, arg: str):
         self.agent.state.reset()
         print("Reset complete.")
+
+
+class CommitCommand(Command):
+    command = "commit"
+    description = "Auto-commit changes using GitCommitAgent - /commit"
+
+    async def execute(self, name: str, arg: str):
+        commit_agent = self.agent.context.get("commit_agent")
+        if not commit_agent:
+            print("No commit agent, ignoring.")
+        result = await commit_agent.auto_commit_changes()
+        print(result)
