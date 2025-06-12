@@ -138,8 +138,23 @@ class ResponseHandler(DefaultResponseHandler):
     async def accumulate_response(self, response):
         if isinstance(response, CompletionStream):
             print("\n======Streaming Assistant Response:======")
+            print(
+                "\n======WARNING: Escape characters might be displayed incorrectly======\n"
+            )
+            last_character = ""
             async for content in response.iter_content():
-                print(content.replace(r"\n", "\n"), end="", flush=True)
+                if not content:
+                    continue
+                if last_character == "\\":
+                    content = "\b \b\\" + content
+                print(
+                    content.replace(r"\n", "\n")
+                    .replace(r"\"", '"')
+                    .replace("\\\\", "\\"),
+                    end="",
+                    flush=True,
+                )
+                last_character = content[-1]
             print("\n")
         return await super().accumulate_response(response)
 
