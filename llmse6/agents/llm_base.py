@@ -77,7 +77,7 @@ class LLMBaseAgent:
         self.state = state_cls(self)
 
     async def llm_node(self, input_content: str):
-        messages = self.state.assemble_prompt(input_content)
+        messages, _ = self.state.assemble_prompt(input_content)
         self.model_params["stream"] = True
         await LLMClient(
             provider_model=self.provider_model, tool_registry=self.tool_registry

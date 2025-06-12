@@ -117,7 +117,8 @@ class SimpleState:
 
         if content:
             messages.append({"role": "user", "content": content})
-        return messages
+            return messages, True
+        return messages, False
 
     def last_message(self) -> str:
         if self.messages and "content" in self.messages[-1]:
@@ -144,6 +145,6 @@ class ResponseHandler(DefaultResponseHandler):
 
     async def __call__(self, response):
         messages, continu = await super().__call__(response)
-        messages = self.state.assemble_prompt("")
+        messages, new_content = self.state.assemble_prompt("")
 
-        return messages, continu
+        return messages, new_content and continu
