@@ -6,26 +6,30 @@ class SearchReading:
         self.agent_state = state
 
     def register_tools(self, manager):
-        manager.register(self.read_file)
+        manager.register(self.read_files)
 
-    def read_file(self, path: str):
+    def read_files(self, paths: list[str]):
         """
-        Add a file to the chat files for the agent to access.
+        Add multiple files to the chat files for the agent to access.
 
         Args:
-            path: Path to the file to be added to chat context
+            paths: List of paths to files to be added to chat context
 
         Returns:
             str: Success message or error description
         """
         try:
             chat_files = self.agent_state.chat_files
-            p = chat_files.normalize(path)
-            if not p.exists():
-                return "File not exist."
+            results = []
+            for path in paths:
+                p = chat_files.normalize(path)
+                if not p.exists():
+                    results.append(f"File not exist: {path}")
+                    continue
+                chat_files.add(p)
+                results.append(f"Successfully added file: {path}")
 
-            chat_files.add(p)
-            return "Successfully added file to context"
+            return "\n".join(results)
 
         except Exception as e:
-            return f"Error reading file: {str(e)}"
+            return f"Error reading files: {str(e)}"
