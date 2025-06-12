@@ -14,13 +14,17 @@ class CoderState(SimpleState):
 
     def _get_message_items(self, user_input):
         items = super()._get_message_items(user_input)
+        if items and items[0][0] == "system_prompt":
+            insert_index = 1
+        else:
+            insert_index = 0
         if not self.message_meta.get("repo_map"):
             chat_files = self.chat_files.list()
             repo_map = self.project_manager.get_repo_map(chat_files)
-            if items and items[0][0] == "system_prompt":
-                insert_index = 1
-            else:
-                insert_index = 0
             items.insert(insert_index, ("repo_map", repo_map))
             self.message_meta["repo_map"] = True
+        if not self.message_meta.get("file_list"):
+            file_list = self.project_manager.get_tracked_files()
+            items.insert(insert_index, ("file_list", file_list))
+            self.message_meta["file_list"] = True
         return items
