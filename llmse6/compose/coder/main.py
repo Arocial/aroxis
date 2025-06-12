@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def main():
+async def _main():
     logger.debug("Starting main function")
     parser = argparse.ArgumentParser()
 
@@ -60,5 +60,9 @@ async def main():
     )
 
 
+def main():
+    asyncio.run(_main())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main

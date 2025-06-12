@@ -29,6 +29,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/fangzhen/llmse6"
 
+[project.scripts]
+llmse6-coder = "llmse6.compose.coder.main:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 
