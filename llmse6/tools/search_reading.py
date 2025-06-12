@@ -24,7 +24,7 @@ class SearchReading:
             if not p.exists():
                 return "File not exist."
 
-            chat_files.add(p, add_to_new=True)
+            chat_files.add(p)
             return "Successfully added file to context"
 
         except Exception as e:

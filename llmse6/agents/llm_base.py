@@ -81,7 +81,7 @@ class LLMBaseAgent:
             provider_model=self.provider_model, tool_registry=self.tool_registry
         ).async_completion_with_tool_execution(
             messages=messages,
-            handle_response=self.state.handle_response,
+            handle_response=self.state.response_handler,
             **self.model_params,
         )
 

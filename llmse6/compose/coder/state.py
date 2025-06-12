@@ -2,7 +2,6 @@ import logging
 
 from llmse6.agents.state import SimpleState
 from llmse6.codebase import project
-from llmse6.utils import xml_wrap
 
 logger = logging.getLogger(__name__)
 
@@ -13,20 +12,15 @@ class CoderState(SimpleState):
         self.project_manager = project.ProjectManager(self.workspace)
         self.chat_files.set_candidate_generator(self.project_manager.get_tracked_files)
 
-    def assemble_prompt(self, user_input: str):
-        messages = self.messages
-        file_contents, chat_files = self.assemble_chat_files()
-        repo_map = self.project_manager.get_repo_map(chat_files)
-
-        input_content = xml_wrap(
-            [
-                ("repo_map", repo_map),
-                ("files", file_contents),
-                ("user_instruction", user_input),
-            ]
-        )
-
-        messages.append({"role": "user", "content": input_content})
-        logger.debug(f"User Prompt:\n{input_content}")
-
-        return messages
+    def _get_message_items(self, user_input):
+        items = super()._get_message_items(user_input)
+        if not self.message_meta.get("repo_map"):
+            chat_files = self.chat_files.list()
+            repo_map = self.project_manager.get_repo_map(chat_files)
+            if items and items[0][0] == "system_prompt":
+                insert_index = 1
+            else:
+                insert_index = 0
+            items.insert(insert_index, ("repo_map", repo_map))
+            self.message_meta["repo_map"] = True
+        return items
