@@ -1,7 +1,7 @@
 import subprocess
 from typing import Optional
 
-from llmse6.agents.llm_base import LLMBaseAgent
+from llmse6.agent_patterns.llm_base import LLMBaseAgent
 
 
 class GitCommitAgent(LLMBaseAgent):
@@ -109,11 +109,11 @@ class GitCommitAgent(LLMBaseAgent):
 if __name__ == "__main__":
     import asyncio
 
-    from llmse6 import agents
+    from llmse6 import agent_patterns
     from llmse6.config import TomlConfigParser
 
     toml_parser = TomlConfigParser()
-    agents.init(toml_parser)
+    agent_patterns.init(toml_parser)
 
     async def main():
         agent = GitCommitAgent("git_commit_agent", toml_parser)

@@ -3,8 +3,8 @@ import asyncio
 import sys
 from pathlib import Path
 
-from llmse6 import agents
-from llmse6.agents.chat import ChatAgent
+from llmse6 import agent_patterns
+from llmse6.agent_patterns.chat import ChatAgent
 from llmse6.config import TomlConfigParser
 from llmse6.utils import user_input_generator
 
@@ -21,7 +21,7 @@ async def main():
 
     default_agent_config = Path(__file__).parent / "software_dev.toml"
     toml_parser = TomlConfigParser(config_files=[default_agent_config])
-    agents.init(toml_parser)
+    agent_patterns.init(toml_parser)
     prd_agent = ChatAgent("prd", toml_parser)
     ux_agent = ChatAgent("ux", toml_parser)
 

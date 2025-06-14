@@ -5,8 +5,6 @@ import re
 import yaml
 from prompt_toolkit.completion import Completer, Completion
 
-from llmse6.agents.git_commit import GitCommitAgent as GitCommitAgent
-
 logger = logging.getLogger(__name__)
 
 

@@ -2,7 +2,7 @@ import logging
 import re
 from pathlib import Path
 
-from llmse6.agents.llm_base import LLMBaseAgent
+from llmse6.agent_patterns.llm_base import LLMBaseAgent
 from llmse6.utils import xml_wrap
 
 logger = logging.getLogger(__name__)

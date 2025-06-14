@@ -1,6 +1,6 @@
 import logging
 
-from llmse6.agents.state import SimpleState
+from llmse6.agent_patterns.state import SimpleState
 from llmse6.codebase import project
 
 logger = logging.getLogger(__name__)

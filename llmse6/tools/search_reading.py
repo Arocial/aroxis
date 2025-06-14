@@ -1,4 +1,4 @@
-from llmse6.agents.state import SimpleState
+from llmse6.agent_patterns.state import SimpleState
 
 
 class SearchReading:

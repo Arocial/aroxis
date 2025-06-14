@@ -1,6 +1,6 @@
 from llmse6 import commands
-from llmse6.agents.llm_base import LLMBaseAgent
-from llmse6.agents.state import SimpleState
+from llmse6.agent_patterns.llm_base import LLMBaseAgent
+from llmse6.agent_patterns.state import SimpleState
 from llmse6.commands.manager import CommandManager
 from llmse6.utils import user_input_generator
 

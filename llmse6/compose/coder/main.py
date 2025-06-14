@@ -6,12 +6,12 @@ from pathlib import Path
 
 from kissllm.tools import LocalToolManager
 
-from llmse6 import agents
-from llmse6.agents.chat import ChatAgent
-from llmse6.agents.git_commit import GitCommitAgent
-from llmse6.agents.llm_base import LLMBaseAgent
+from llmse6 import agent_patterns
+from llmse6.agent_patterns.chat import ChatAgent
+from llmse6.agent_patterns.llm_base import LLMBaseAgent
 from llmse6.commands import CommandCompleter
 from llmse6.compose.coder.state import CoderState
+from llmse6.compose.git_commit import GitCommitAgent
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit, search_reading
 from llmse6.utils import user_input_generator
@@ -33,7 +33,7 @@ class CoderComposer:
 
         default_agent_config = Path(__file__).parent / "config.toml"
         toml_parser = TomlConfigParser(config_files=[default_agent_config])
-        agents.init(toml_parser)
+        agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 
         diff_agent = LLMBaseAgent("smart-diff", toml_parser)
