@@ -27,6 +27,18 @@ class ChatFiles:
             p = p.relative_to(workspace)
         return p
 
+    def add_by_names(self, paths: list[str]):
+        succeed = []
+        not_exist = []
+        for path in paths:
+            p = self.normalize(path)
+            if not p.exists():
+                not_exist.append(path)
+                continue
+            self.add(p)
+            succeed.append(path)
+        return {"succeed": succeed, "not_exist": not_exist}
+
     def add(self, f: Path):
         self._chat_files.append(f)
         self._pending_files.append(f)

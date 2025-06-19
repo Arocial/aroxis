@@ -74,12 +74,9 @@ class FileCommand(Command):
             print("Please specify files.")
             return
         if name == "add":
-            for f in files:
-                p = chat_files.normalize(f)
-                if p.exists():
-                    chat_files.add(p)
-                else:
-                    logger.warning(f"{p} doesn't exist, ignoring.")
+            result = chat_files.add_by_names(files)
+            for f in result.get("not_exist"):
+                print(f"{f} doesn't exist, ignoring.")
         else:
             for f in files:
                 p = chat_files.normalize(f)
