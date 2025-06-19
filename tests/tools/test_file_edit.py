@@ -62,17 +62,31 @@ def test():
     pass"""
             file_path.write_text(original_content)
 
-            diff = """<<<<<<< SEARCH
+            diff = """
+<<<<<<< SEARCH
 import yaml
 =======
 import json
->>>>>>> REPLACE"""
+>>>>>>> REPLACE
+            """
 
             result = await self.tool.replace_in_file(str(file_path), diff)
 
             assert "Successfully updated" in result
             updated_content = file_path.read_text()
             assert "import json" in updated_content
+            assert "import yaml" not in updated_content
+
+            diff2 = """
+<<<<<<< SEARCH
+import yaml
+=======
+>>>>>>> REPLACE
+            """
+            result = await self.tool.replace_in_file(str(file_path), diff2)
+
+            assert "Successfully updated" in result
+            updated_content = file_path.read_text()
             assert "import yaml" not in updated_content
 
     @pytest.mark.asyncio

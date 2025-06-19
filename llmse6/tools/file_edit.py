@@ -103,29 +103,40 @@ class FileEdit:
             if not file_path.exists():
                 return f"File not found: {file_path}"
 
-            content = file_path.read_text()
-            blocks = diff.split("\n>>>>>>> REPLACE")
+            orig_content = file_path.read_text()
+            content = orig_content
 
-            for block in blocks:
-                if not block.strip():
-                    continue
-                parts = block.split("\n=======\n")
-                if len(parts) < 2:
-                    continue
-                search_part = parts[0].split("<<<<<<< SEARCH\n")[-1]
-                replace_part = parts[1]
+            diff_lines = diff.splitlines()
+            s_start = s_end = r_start = r_end = 0
+            for idx, line in enumerate(diff_lines):
+                if "<<<<<<< SEARCH" == line:
+                    s_start = idx + 1
+                elif "=======" == line:
+                    s_end = idx
+                    r_start = idx + 1
+                elif ">>>>>>> REPLACE" == line:
+                    r_end = idx
+                    if not all([s_start, s_end, r_start, r_end]):
+                        # Indicates incorrect format
+                        content = await self._apply_smart_diff(orig_content, diff)
+                        break
 
-                # Check if search_part contains ...existing code...
-                m, start_pos, end_pos = self._find_with_placeholder(
-                    content, search_part
-                )
-                if m:
-                    content = content[:start_pos] + replace_part + content[end_pos:]
-                else:
-                    if search_part in content:
-                        content = content.replace(search_part, replace_part, 1)
+                    search_part = "\n".join(diff_lines[s_start:s_end])
+                    replace_part = "\n".join(diff_lines[r_start:r_end])
+                    s_start = s_end = r_start = r_end = 0
+
+                    # Check if search_part contains ...existing code...
+                    m, start_pos, end_pos = self._find_with_placeholder(
+                        content, search_part
+                    )
+                    if m:
+                        content = content[:start_pos] + replace_part + content[end_pos:]
                     else:
-                        content = await self._apply_smart_diff(content, diff)
+                        if search_part in content:
+                            content = content.replace(search_part, replace_part, 1)
+                        else:
+                            content = await self._apply_smart_diff(orig_content, diff)
+                            break
 
             file_path.write_text(content)
             return f"Successfully updated {file_path}"
