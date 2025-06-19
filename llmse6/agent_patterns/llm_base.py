@@ -28,7 +28,9 @@ class LLMBaseAgent:
         self.name = name
         self.context = context
 
-        agent_group = config_parser.add_argument_group(name=f"agent.{name}")
+        agent_group = config_parser.add_argument_group(
+            name=f"agent.{name}", expose_raw=True
+        )
         agent_group.add_argument("system_prompt", default="")
         config_parser.add_argument_group(
             name=f"agent.{name}.model_params", expose_raw=True
@@ -40,6 +42,7 @@ class LLMBaseAgent:
         if not self.workspace.is_absolute():
             self.workspace = self.workspace.absolute()
         group_config = getattr(config.agent, name)
+        self.agent_config = group_config
 
         # Load default metadata using configargparse
         self.system_prompt = group_config.system_prompt
