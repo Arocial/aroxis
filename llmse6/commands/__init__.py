@@ -51,7 +51,7 @@ class Command:
     def __init__(self, agent):
         self.agent = agent
 
-    def slashs(self) -> list[str]:
+    def slashes(self) -> list[str]:
         return [self.command]
 
     def execute(self, name: str, arg: str):
@@ -64,7 +64,7 @@ class FileCommand(Command):
         "Add/Drop files to context - /add <file1> [file2...];  /drop <file1> [file2...]"
     )
 
-    def slashs(self) -> list[str]:
+    def slashes(self) -> list[str]:
         return ["add", "drop"]
 
     def execute(self, name: str, arg: str):

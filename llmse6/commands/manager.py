@@ -11,7 +11,7 @@ class CommandManager:
 
     def register_commands(self, commands: list[Command]):
         for command in commands:
-            for s in command.slashs():
+            for s in command.slashes():
                 self.command_map[s] = command
 
     async def try_execute_command(self, user_input: str) -> bool:
