@@ -19,18 +19,9 @@ class ChatAgent(LLMBaseAgent):
         )
 
         self.command_manager = CommandManager(self)
-        self.command_manager.register_commands(
-            [
-                commands.FileCommand(self),
-                commands.ModelCommand(self),
-                commands.InvokeToolCommand(self),
-                commands.ListToolCommand(self),
-                commands.SaveCommand(self),
-                commands.ResetCommand(self),
-                commands.InfoCommand(self),
-                commands.CommitCommand(self),
-            ]
-        )
+
+    def register_commands(self, cmds: list[commands.Command]):
+        self.command_manager.register_commands(cmds)
 
     async def start(self, input_gen=None):
         """Start the agent with optional input generator

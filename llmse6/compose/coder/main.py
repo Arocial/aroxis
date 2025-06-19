@@ -7,6 +7,7 @@ from pathlib import Path
 from kissllm.tools import LocalToolManager
 
 from llmse6 import agent_patterns
+from llmse6 import commands
 from llmse6.agent_patterns.chat import ChatAgent
 from llmse6.agent_patterns.llm_base import LLMBaseAgent
 from llmse6.commands import CommandCompleter
@@ -53,6 +54,18 @@ class CoderComposer:
         )
         sr_tool = search_reading.SearchReading(coder_agent.state)
         sr_tool.register_tools(local_tool_manager)
+
+        coder_commands = [
+                commands.FileCommand(coder_agent),
+                commands.ModelCommand(coder_agent),
+                commands.InvokeToolCommand(coder_agent),
+                commands.ListToolCommand(coder_agent),
+                commands.ResetCommand(coder_agent),
+                commands.InfoCommand(coder_agent),
+                commands.CommitCommand(coder_agent),
+        ]
+        coder_agent.register_commands(coder_commands)
+
         self.coder_agent = coder_agent
 
         if args.dump_default_config:
