@@ -6,8 +6,57 @@ import tomli
 from llmse6.utils import deep_merge
 
 
+def parse_dot_config(cli_args: list[str]) -> dict:
+    """Parse arbitrary configs in dot notation to a nested dictionary.
+
+    For example: ["a.b=value", "a.e.f=True"] will be parsed to:
+    {
+        "a": {
+            "b": "value",
+            "e": {
+                "f": True
+            }
+        }
+    }
+
+    Args:
+        cli_args: List of strings in the format "key.path=value".
+
+    Returns:
+        dict: Nested dictionary representing the parsed config.
+    """
+    result = {}
+    for arg in cli_args:
+        if "=" not in arg:
+            continue  # Skip malformed entries
+        key_path, value = arg.split("=", 1)
+        keys = key_path.split(".")
+        current = result
+        for key in keys[:-1]:
+            if key not in current:
+                current[key] = {}
+            current = current[key]
+        # Convert value to appropriate type (e.g., boolean, int, float, or string)
+        if value.lower() == "true":
+            value = True
+        elif value.lower() == "false":
+            value = False
+        else:
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass  # Keep as string
+        current[keys[-1]] = value
+    return result
+
+
 class TomlConfigParser:
-    def __init__(self, config_files: Optional[List[Path]] = None):
+    def __init__(
+        self, config_files: Optional[List[Path]] = None, override_configs=None
+    ):
         self._raw_data = None
         self.known_groups = []
         self.defaults = {}
@@ -24,6 +73,7 @@ class TomlConfigParser:
         proxy_group.add_argument("host", default=None, help="Proxy host address")
         proxy_group.add_argument("port", default=None, help="Proxy port number")
         self.config_files = config_files
+        self.override_configs = override_configs
 
     def parse_args(self):
         self.load_config()
@@ -78,6 +128,8 @@ class TomlConfigParser:
             if path.exists():
                 with open(path, "rb") as f:
                     config = deep_merge(config, tomli.load(f))
+        if self.override_configs:
+            config = deep_merge(config, self.override_configs)
 
         self._raw_data = config
         return config

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from kissllm.tools import LocalToolManager
 
-from llmse6 import agent_patterns, commands
+from llmse6 import agent_patterns, commands, config
 from llmse6.agent_patterns.chat import ChatAgent
 from llmse6.agent_patterns.llm_base import LLMBaseAgent
 from llmse6.commands import CommandCompleter
@@ -29,10 +29,12 @@ class CoderComposer:
             help="Dump default config to specified file and exit.",
             default="",
         )
-        args = parser.parse_args()
+        args, unknown_args = parser.parse_known_args()
+        cli_configs = config.parse_dot_config(unknown_args)
 
         default_agent_config = Path(__file__).parent / "config.toml"
-        toml_parser = TomlConfigParser(config_files=[default_agent_config])
+        toml_parser = TomlConfigParser(config_files=[default_agent_config],
+                                       override_configs=cli_configs)
         agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 

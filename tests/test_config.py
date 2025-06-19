@@ -108,3 +108,26 @@ def test_expose_raw_config(tmp_path):
     config = parser.parse_args()
     assert config.group.value == 42
     assert config.group.extra == "should_be_passed_through"
+
+
+def test_parse_dot_config():
+    """Test parse_nested_config function"""
+    from llmse6.config import parse_dot_config
+
+    # Test basic nested structure
+    args = ["a.b=value", "a.e.f=True", "a.e.g=42", "a.e.h=3.14"]
+    result = parse_dot_config(args)
+    assert result == {"a": {"b": "value", "e": {"f": True, "g": 42, "h": 3.14}}}
+
+    # Test type conversion
+    args = ["bool.true=true", "bool.false=false", "number.int=123", "number.float=1.23"]
+    result = parse_dot_config(args)
+    assert result == {
+        "bool": {"true": True, "false": False},
+        "number": {"int": 123, "float": 1.23},
+    }
+
+    # Test malformed entries
+    args = ["valid.key=value", "invalid_entry", "another.valid=123"]
+    result = parse_dot_config(args)
+    assert result == {"valid": {"key": "value"}, "another": {"valid": 123}}
