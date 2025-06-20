@@ -33,8 +33,9 @@ class CoderComposer:
         cli_configs = config.parse_dot_config(unknown_args)
 
         default_agent_config = Path(__file__).parent / "config.toml"
-        toml_parser = TomlConfigParser(config_files=[default_agent_config],
-                                       override_configs=cli_configs)
+        toml_parser = TomlConfigParser(
+            config_files=[default_agent_config], override_configs=cli_configs
+        )
         agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 
@@ -76,13 +77,10 @@ class CoderComposer:
             sys.exit(0)
 
     async def run(self):
-        test_user_msg = []
         logger.debug("Starting coder agent")
         await self.coder_agent.start(
             user_input_generator(
-                completer=CommandCompleter(self.coder_agent.command_manager),
-                cached_human_responses=test_user_msg,
-                force_cached=False,
+                completer=CommandCompleter(self.coder_agent.command_manager)
             )
         )
 

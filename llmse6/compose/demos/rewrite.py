@@ -43,9 +43,7 @@ async def main():
         f"/save {args.file}",
         "q",
     ]
-    await agent.start(
-        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
-    )
+    await agent.start(user_input_generator(cached_human_responses=test_user_msg))
 
 
 if __name__ == "__main__":

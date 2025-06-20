@@ -31,13 +31,11 @@ async def main():
         sys.exit(0)
 
     test_user_msg = []
-    await prd_agent.start(
-        user_input_generator(cached_human_responses=test_user_msg, force_cached=False)
-    )
+    await prd_agent.start(user_input_generator(cached_human_responses=test_user_msg))
 
     print("PRD agent finished.")
 
-    await ux_agent.start(await user_input_generator())
+    await ux_agent.start(user_input_generator())
 
 
 if __name__ == "__main__":

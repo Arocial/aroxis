@@ -1,4 +1,6 @@
 import pytest
+from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.output import DummyOutput
 
 from llmse6.utils import deep_merge, user_input_generator
 
@@ -33,7 +35,15 @@ def test_deep_merge_nested_structures():
 
 @pytest.mark.asyncio
 async def test_user_input_generator_quit():
-    gen = user_input_generator(["test1", "q"], force_cached=True)
-    assert await anext(gen) == "test1"
-    with pytest.raises(StopAsyncIteration):
-        await anext(gen)
+    with create_pipe_input() as pipe_input:
+        pipe_input.send_text("test1\n")
+        pipe_input.send_text("q\n")
+
+        gen = user_input_generator(
+            input=pipe_input,
+            output=DummyOutput(),
+        )
+
+        assert await anext(gen) == "test1"
+        with pytest.raises(StopAsyncIteration):
+            await anext(gen)

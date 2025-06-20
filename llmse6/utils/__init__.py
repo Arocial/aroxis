@@ -22,55 +22,37 @@ def parse_dict(value: str) -> dict:
     return dict(yaml.safe_load(value))
 
 
-def user_input_generator(
-    cached_human_responses=[],
-    cached_response_index=0,
-    force_cached=False,
-    completer=None,
-):
+async def user_input_generator(completer=None, input=None, output=None):
     """Async generator that yields user input"""
+    history = FileHistory(".llmse6_history")
+    kb = KeyBindings()
 
-    async def wrapper():
-        nonlocal cached_response_index
-        history = FileHistory(".llmse6_history")
-        kb = KeyBindings()
+    @kb.add("enter")
+    def _(event):  # Enter to submit
+        event.current_buffer.validate_and_handle()
 
-        @kb.add("enter")
-        def _(event):  # Enter to submit
-            event.current_buffer.validate_and_handle()
+    @kb.add("escape", "enter")  # Alt+Enter newline
+    @kb.add("escape", "O", "M")  # Shift+Enter (at least in my konsole)
+    def _(event):
+        event.current_buffer.insert_text("\n")
 
-        @kb.add("escape", "enter")  # Alt+Enter newline
-        @kb.add("escape", "O", "M")  # Shift+Enter (at least in my konsole)
-        def _(event):
-            event.current_buffer.insert_text("\n")
-
-        session = PromptSession(
-            prompt_continuation="> ",
-            multiline=True,
-            key_bindings=kb,
-            history=history,
-            auto_suggest=AutoSuggestFromHistory(),
-            mouse_support=False,
-            completer=completer,
-        )
-        while True:
-            try:
-                if force_cached:
-                    user_input = cached_human_responses[cached_response_index]
-                    cached_response_index += 1
-                    print(f"(cached): {user_input}\n")
-                else:
-                    user_input = await session.prompt_async("User (q/Q to quit): ")
-            except EOFError:
-                user_input = cached_human_responses[cached_response_index]
-                cached_response_index += 1
-                print(f"(cached): {user_input}\n")
-            if user_input in {"q", "Q"}:
-                print("AI: Byebye")
-                break
-            yield user_input
-
-    return wrapper()
+    session = PromptSession(
+        prompt_continuation="> ",
+        multiline=True,
+        key_bindings=kb,
+        history=history,
+        auto_suggest=AutoSuggestFromHistory(),
+        mouse_support=False,
+        completer=completer,
+        input=input,
+        output=output,
+    )
+    while True:
+        user_input = await session.prompt_async("User (q/Q to quit): ")
+        if user_input in {"q", "Q"}:
+            print("AI: Byebye")
+            break
+        yield user_input
 
 
 def xml_wrap(contents: list[tuple[str, str]]) -> str:
