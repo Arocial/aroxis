@@ -12,3 +12,5 @@ dist/
 .aider*
 !.aider.conf.yml
 !.aider.instructions.md
+
+*.testres
