@@ -48,12 +48,15 @@ class GitCommitAgent(LLMBaseAgent):
         last_message = self.state.messages[-1]["content"]
         return last_message.strip()
 
-    async def commit_changes(self, message: Optional[str] = None) -> str:
+    async def commit_changes(self, message: Optional[str] = None, additional_author: Optional[str] = None) -> str:
         """
         Commit the staged changes with the provided or generated commit message.
 
         Args:
             message: Optional commit message. If None, a message is generated.
+            additional_author: Optional additional author to include in the commit's author metadata.
+                              If provided, the commit's author will be formatted as:
+                              "{default_author} ({additional_author})"
 
         Returns:
             str: The output of the git commit command or an error message.
@@ -61,9 +64,22 @@ class GitCommitAgent(LLMBaseAgent):
         if message is None:
             message = await self.generate_commit_message()
 
+        commit_command = ["git", "commit", "-m", message]
+        if additional_author:
+            # Get the default author
+            try:
+                default_author = subprocess.check_output(
+                    ["git", "config", "user.name"],
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                ).strip()
+                commit_command.extend(["--author", f"{default_author} ({additional_author})"])
+            except subprocess.CalledProcessError as e:
+                return f"Error getting default author: {e.stderr}"
+
         try:
             output = subprocess.check_output(
-                ["git", "commit", "-m", message],
+                commit_command,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
             )
