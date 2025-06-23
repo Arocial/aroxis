@@ -70,6 +70,18 @@ class CoderComposer:
 
         self.coder_agent = coder_agent
 
+        # Add commit hooks
+        async def before_llm_hook(agent, input_content: str):
+            logger.info("Running pre-LLM commit hook")
+            await self.commit_agent.auto_commit_changes()
+
+        async def after_llm_hook(agent, input_content: str):
+            logger.info("Running post-LLM commit hook")
+            await self.commit_agent.auto_commit_changes()
+
+        self.coder_agent.add_before_llm_node_hook(before_llm_hook)
+        self.coder_agent.add_after_llm_node_hook(after_llm_hook)
+
         if args.dump_default_config:
             logger.debug(f"Dumping default config to {args.dump_default_config}")
             with open(args.dump_default_config, "w") as f:

@@ -79,7 +79,18 @@ class LLMBaseAgent:
 
         self.state = state_cls(self)
 
+    async def _run_before_hooks(self, input_content: str):
+        if hasattr(self, "before_llm_node_hooks"):
+            for hook in self.before_llm_node_hooks:
+                await hook(self, input_content)
+
+    async def _run_after_hooks(self, input_content: str):
+        if hasattr(self, "after_llm_node_hooks"):
+            for hook in self.after_llm_node_hooks:
+                await hook(self, input_content)
+
     async def llm_node(self, input_content: str):
+        await self._run_before_hooks(input_content)
         messages, _ = self.state.assemble_prompt(input_content)
         self.model_params["stream"] = True
         await LLMClient(
@@ -89,6 +100,17 @@ class LLMBaseAgent:
             handle_response=self.state.response_handler,
             **self.model_params,
         )
+        await self._run_after_hooks(input_content)
 
     def last_message(self):
         return self.state.last_message()
+
+    def add_before_llm_node_hook(self, hook):
+        if not hasattr(self, "before_llm_node_hooks"):
+            self.before_llm_node_hooks = []
+        self.before_llm_node_hooks.append(hook)
+
+    def add_after_llm_node_hook(self, hook):
+        if not hasattr(self, "after_llm_node_hooks"):
+            self.after_llm_node_hooks = []
+        self.after_llm_node_hooks.append(hook)
