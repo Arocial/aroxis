@@ -49,16 +49,16 @@ class GitCommitAgent(LLMBaseAgent):
         return last_message.strip()
 
     async def commit_changes(
-        self, message: Optional[str] = None, additional_author: Optional[str] = None
+        self, message: Optional[str] = None, co_author: Optional[str] = None
     ) -> str:
         """
         Commit the staged changes with the provided or generated commit message.
 
         Args:
             message: Optional commit message. If None, a message is generated.
-            additional_author: Optional additional author to include in the commit's author metadata.
-                              If provided, the commit's author will be formatted as:
-                              "{default_author} ({additional_author})"
+            co_author: Optional co-author to include in the commit message.
+                      If provided, the commit message will include:
+                      "Co-authored-by: {co_author}"
 
         Returns:
             str: The output of the git commit command or an error message.
@@ -69,11 +69,9 @@ class GitCommitAgent(LLMBaseAgent):
         try:
             repo = git.Repo(search_parent_directories=True)
 
-            if additional_author:
-                # Get the default author
-                default_author = repo.config_reader().get_value("user", "name")
-                author = f"{default_author} ({additional_author})"
-                commit = repo.index.commit(message, author=author)
+            if co_author:
+                message = f"{message}\n\nCo-authored-by: {co_author}"
+                commit = repo.index.commit(message)
             else:
                 commit = repo.index.commit(message)
 
@@ -83,7 +81,7 @@ class GitCommitAgent(LLMBaseAgent):
         except git.GitCommandError as e:
             return f"Error committing changes: {e}"
 
-    async def auto_commit_changes(self) -> str:
+    async def auto_commit_changes(self, co_author: Optional[str] = None) -> str:
         """
         Automatically commit any uncommitted changes with a generated commit message.
         This includes both staged and unstaged changes.
@@ -104,7 +102,7 @@ class GitCommitAgent(LLMBaseAgent):
 
             # Generate and commit the changes
             message = await self.generate_commit_message(diff)
-            return await self.commit_changes(message)
+            return await self.commit_changes(message, co_author=co_author)
         except git.InvalidGitRepositoryError:
             return "Error: Not a git repository"
         except git.GitCommandError as e:
