@@ -58,6 +58,9 @@ class Command:
         """Execute command with given input"""
         raise NotImplementedError
 
+    def get_completions(self, name, args, document):
+        yield from []
+
 
 class FileCommand(Command):
     description = (

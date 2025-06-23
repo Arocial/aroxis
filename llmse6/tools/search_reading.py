@@ -6,11 +6,15 @@ class SearchReading:
         self.agent_state = state
 
     def register_tools(self, manager):
-        manager.register(self.read_files)
+        manager.register(self.add_files)
 
-    def read_files(self, paths: list[str]):
+    def add_files(self, paths: list[str]):
         """
-        Add multiple files to the chat files for the agent to access.
+        Add files to the chat context.
+
+        Note:
+          The content of added files will be provided in next user message,
+          not the return value of the tool.
 
         Args:
             paths: **List** of paths to files to be added to chat context.

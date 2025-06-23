@@ -14,7 +14,7 @@ class CoderState(SimpleState):
 
     def _get_message_items(self, user_input):
         items = super()._get_message_items(user_input)
-        if items and items[0][0] == "system_prompt":
+        if items and items[0][0] == "system":
             insert_index = 1
         else:
             insert_index = 0

@@ -112,9 +112,9 @@ class SimpleState:
     def _get_message_items(self, user_input):
         items = []
         messages_meta = self.message_meta
-        if not messages_meta.get("system_prompt"):
-            items.append(("system_prompt", self.system_prompt))
-            self.message_meta["system_prompt"] = True
+        if not messages_meta.get("system"):
+            items.append(("system", self.system_prompt))
+            self.message_meta["system"] = True
         file_contents, _ = self.assemble_chat_files()
         if file_contents:
             items.append(("files", file_contents))
@@ -125,12 +125,17 @@ class SimpleState:
     def assemble_prompt(self, user_input: str):
         messages = self.messages
         items = self._get_message_items(user_input)
-        content = xml_wrap(items)
+        has_new = False
+        for item in items:
+            if item[0] == "system":
+                messages.append({"role": "system", "content": item[1]})
+                continue
+            content = xml_wrap([item])
+            if content:
+                messages.append({"role": "user", "content": content})
+                has_new = True
 
-        if content:
-            messages.append({"role": "user", "content": content})
-            return messages, True
-        return messages, False
+        return messages, has_new
 
     def last_message(self) -> str:
         if self.messages and "content" in self.messages[-1]:

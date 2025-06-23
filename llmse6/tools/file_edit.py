@@ -33,22 +33,23 @@ class FileEdit:
         )
 
     async def write_to_file(self, path: str, content: str) -> str:
-        """
-        Write content to a file at the specified path. If the file exists, it will be overwritten.
-        If the file doesn't exist, it will be created. This tool will automatically create any
-        directories needed to write the file.
+        """Write content to a file at the specified path.
+
+        If the file exists, it will be overwritten. If the file doesn't exist, it will be created. This tool will automatically create any directories needed to write the file.
 
         Args:
             path: The path of the file to write to.
-            content: The complete content to write to the file. You can use commentted `...existing code...` to omit code. see CONTENT_EXAMPLES.
+            content: The content to write to the file. See 'Content' section blow.
 
-        CONTENT_EXAMPLES:
+        Content:
 
-        import json
-        import yaml
-        # ...existing code...
-        class TestClass:
+            You can output a simplified version of the code block that highlights the changes necessary and adds comments to indicate where unchanged code has been skipped. Include some unchanged code before and after your edits, especially when inserting new code into an existing file. For example:
+
+            import json
+            import yaml
             # ...existing code...
+            class TestClass:
+                # ...existing code...
 
         Returns:
             str: Success message or error description
@@ -70,30 +71,29 @@ class FileEdit:
 
         Args:
             path: The path of the file to modify.
-            diff: One or more SEARCH/REPLACE blocks defining exact changes.
-                  You can use commentted `...existing code...` to omit some code in *SEARCH* part.
-                  Except that, the `SEARCH` part should match exactly and clearly, including spaces.
-                  see DIFF-EXAMPLES.
+            diff: One or more SEARCH/REPLACE blocks defining exact changes. See 'Diff' section below. To edit multiple, non-adjacent lines of code in the same file, make a single call to this tool with multiple SEARCH/REPLACE blocks.
 
-        DIFF-EXAMPLES:
-        example1:
+        Diff:
+            In *SEARCH* part, you can use a simplified version of the code block. The `SEARCH` parts MUST identify code blocks exactly and clearly, including spaces. for example:
 
-        <<<<<<< SEARCH
-        import yaml
-        =======
-        import json
-        >>>>>>> REPLACE
+            example1:
 
-        example2:
-        <<<<<<< SEARCH
-        import yaml
-        # ...existing code...
-        from . import foo
-        =======
-        import json
+            <<<<<<< SEARCH
+            import yaml
+            =======
+            import json
+            >>>>>>> REPLACE
 
-        from . import bar, foo
-        >>>>>>> REPLACE
+            example2:
+            <<<<<<< SEARCH
+            import yaml
+            # ...existing code...
+            from . import foo
+            =======
+            import json
+
+            from . import bar, foo
+            >>>>>>> REPLACE
 
         Returns:
             str: Success message or error description
