@@ -1,5 +1,6 @@
-import subprocess
 from typing import Optional
+
+import git
 
 from llmse6.agent_patterns.llm_base import LLMBaseAgent
 
@@ -25,13 +26,12 @@ class GitCommitAgent(LLMBaseAgent):
         if diff is None:
             # Fetch the current changes using git diff
             try:
-                diff = subprocess.check_output(
-                    ["git", "diff", "--staged"],
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                )
-            except subprocess.CalledProcessError as e:
-                return f"Error fetching git diff: {e.stderr}"
+                repo = git.Repo(search_parent_directories=True)
+                diff = repo.git.diff("--staged")
+            except git.InvalidGitRepositoryError:
+                return "Error: Not a git repository"
+            except git.GitCommandError as e:
+                return f"Error fetching git diff: {e}"
 
         if not diff:
             return "No changes detected to generate a commit message."
@@ -48,7 +48,9 @@ class GitCommitAgent(LLMBaseAgent):
         last_message = self.state.messages[-1]["content"]
         return last_message.strip()
 
-    async def commit_changes(self, message: Optional[str] = None, additional_author: Optional[str] = None) -> str:
+    async def commit_changes(
+        self, message: Optional[str] = None, additional_author: Optional[str] = None
+    ) -> str:
         """
         Commit the staged changes with the provided or generated commit message.
 
@@ -64,28 +66,22 @@ class GitCommitAgent(LLMBaseAgent):
         if message is None:
             message = await self.generate_commit_message()
 
-        commit_command = ["git", "commit", "-m", message]
-        if additional_author:
-            # Get the default author
-            try:
-                default_author = subprocess.check_output(
-                    ["git", "config", "user.name"],
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                ).strip()
-                commit_command.extend(["--author", f"{default_author} ({additional_author})"])
-            except subprocess.CalledProcessError as e:
-                return f"Error getting default author: {e.stderr}"
-
         try:
-            output = subprocess.check_output(
-                commit_command,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-            )
-            return output
-        except subprocess.CalledProcessError as e:
-            return f"Error committing changes: {e.stderr}"
+            repo = git.Repo(search_parent_directories=True)
+
+            if additional_author:
+                # Get the default author
+                default_author = repo.config_reader().get_value("user", "name")
+                author = f"{default_author} ({additional_author})"
+                commit = repo.index.commit(message, author=author)
+            else:
+                commit = repo.index.commit(message)
+
+            return f"Committed {commit.hexsha}"
+        except git.InvalidGitRepositoryError:
+            return "Error: Not a git repository"
+        except git.GitCommandError as e:
+            return f"Error committing changes: {e}"
 
     async def auto_commit_changes(self) -> str:
         """
@@ -95,31 +91,24 @@ class GitCommitAgent(LLMBaseAgent):
         Returns:
             str: The output of the git commit command or an error message.
         """
-        # Stage all unstaged changes
         try:
-            subprocess.check_output(
-                ["git", "add", "."],
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-            )
-        except subprocess.CalledProcessError as e:
-            return f"Error staging changes: {e.stderr}"
+            repo = git.Repo(search_parent_directories=True)
 
-        # Check for staged changes
-        try:
-            diff = subprocess.check_output(
-                ["git", "diff", "--staged"],
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-            )
+            # Stage all unstaged changes
+            repo.git.add(".")
+
+            # Check for staged changes
+            diff = repo.git.diff("--staged")
             if not diff:
                 return "No changes detected to commit."
 
             # Generate and commit the changes
             message = await self.generate_commit_message(diff)
             return await self.commit_changes(message)
-        except subprocess.CalledProcessError as e:
-            return f"Error checking for changes: {e.stderr}"
+        except git.InvalidGitRepositoryError:
+            return "Error: Not a git repository"
+        except git.GitCommandError as e:
+            return f"Error during auto commit: {e}"
 
 
 if __name__ == "__main__":
