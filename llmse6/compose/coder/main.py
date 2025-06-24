@@ -14,7 +14,7 @@ from llmse6.compose.coder.state import CoderState
 from llmse6.compose.git_commit import GitCommitAgent
 from llmse6.config import TomlConfigParser
 from llmse6.tools import file_edit, search_reading
-from llmse6.utils import user_input_generator
+from llmse6.utils import run_command, user_input_generator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +36,16 @@ class CoderComposer:
         toml_parser = TomlConfigParser(
             config_files=[default_agent_config], override_configs=cli_configs
         )
+
+        self.name = "coder"
+        composer_group = toml_parser.add_argument_group(
+            name=f"composer.{self.name}", expose_raw=True
+        )
+        composer_group.add_argument("pre_commit_cmd", default=None)
+        self.config = toml_parser.parse_args()
+        composer_config = getattr(self.config.composer, self.name)
+        self.pre_commit_cmd = composer_config.pre_commit_cmd
+
         agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 
@@ -77,6 +87,13 @@ class CoderComposer:
 
         async def after_llm_hook(agent, input_content: str):
             logger.info("Running post-LLM commit hook")
+            if self.pre_commit_cmd:
+                stdout, stderr, returncode = await run_command(self.pre_commit_cmd)
+                if returncode != 0:
+                    logger.error(f"Pre-commit command failed: {self.pre_commit_cmd}")
+                    logger.error(f"stdout: {stdout}")
+                    logger.error(f"stderr: {stderr}")
+
             co_author = f"llmse6-coder/{agent.provider_model}"
             await self.commit_agent.auto_commit_changes(co_author=co_author)
 

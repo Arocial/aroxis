@@ -61,3 +61,23 @@ def xml_wrap(contents: list[tuple[str, str]]) -> str:
         if content is not None:
             xmled.append(f"<{tag}>\n{content}\n</{tag}>\n")
     return "\n".join(xmled)
+
+
+async def run_command(command: str) -> tuple[str, str, int]:
+    """
+    Run a shell command asynchronously.
+
+    Args:
+        command: The command to run
+
+    Returns:
+        tuple: (stdout, stderr, return_code)
+    """
+    import asyncio
+
+    process = await asyncio.create_subprocess_shell(
+        command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await process.communicate()
+    return stdout.decode(), stderr.decode(), process.returncode
