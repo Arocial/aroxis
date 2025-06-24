@@ -26,10 +26,12 @@ class SearchReading:
                 paths = [paths]
             results = chat_files.add_by_names(paths)
             msg = []
-            msg.append(f"Successfully added files: {' '.join(results['succeed'])}")
-            msg.append(f"File not exist: {' '.join(results['not_exist'])}")
+            if results["succeed"]:
+                msg.append(f"Successfully added files: {' '.join(results['succeed'])}")
+            if results["not_exist"]:
+                msg.append(f"File not exist: {' '.join(results['not_exist'])}")
 
-            return "\n".join(results)
+            return "\n".join(msg)
 
         except Exception as e:
             return f"Error reading files: {str(e)}"
