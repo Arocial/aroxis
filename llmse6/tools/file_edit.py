@@ -74,7 +74,7 @@ class FileEdit:
             diff: One or more SEARCH/REPLACE blocks defining exact changes. See 'Diff' section below. To edit multiple, non-adjacent lines of code in the same file, make a single call to this tool with multiple SEARCH/REPLACE blocks.
 
         Diff:
-            In *SEARCH* part, you can use a simplified version of the code block. The `SEARCH` parts MUST identify code blocks exactly and clearly, including spaces. for example:
+            In *SEARCH* part, you can use a simplified version of the code block. Except for the `...existing code...` line,  the `SEARCH` parts must match current code **literally**, including spaces. for example:
 
             example1:
 
