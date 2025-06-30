@@ -1,6 +1,6 @@
 import pytest
 
-from llmse6.config import ArgumentGroup, Config, TomlConfigParser
+from arox.config import ArgumentGroup, Config, TomlConfigParser
 
 
 def test_config_basic_parsing(tmp_path):
@@ -112,7 +112,7 @@ def test_expose_raw_config(tmp_path):
 
 def test_parse_dot_config():
     """Test parse_nested_config function"""
-    from llmse6.config import parse_dot_config
+    from arox.config import parse_dot_config
 
     # Test basic nested structure
     args = ["a.b=value", "a.e.f=True", "a.e.g=42", "a.e.h=3.14"]

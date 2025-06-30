@@ -4,10 +4,10 @@ import pytest
 from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 
-from llmse6 import agent_patterns, commands
-from llmse6.agent_patterns.chat import ChatAgent
-from llmse6.config import TomlConfigParser
-from llmse6.utils import user_input_generator
+from arox import agent_patterns, commands
+from arox.agent_patterns.chat import ChatAgent
+from arox.config import TomlConfigParser
+from arox.utils import user_input_generator
 
 
 @pytest.mark.asyncio

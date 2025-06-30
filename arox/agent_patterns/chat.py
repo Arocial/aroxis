@@ -1,8 +1,8 @@
-from llmse6 import commands
-from llmse6.agent_patterns.llm_base import LLMBaseAgent
-from llmse6.agent_patterns.state import SimpleState
-from llmse6.commands.manager import CommandManager
-from llmse6.utils import user_input_generator
+from arox import commands
+from arox.agent_patterns.llm_base import LLMBaseAgent
+from arox.agent_patterns.state import SimpleState
+from arox.commands.manager import CommandManager
+from arox.utils import user_input_generator
 
 
 class ChatAgent(LLMBaseAgent):

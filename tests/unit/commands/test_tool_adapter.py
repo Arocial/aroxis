@@ -1,6 +1,6 @@
 import unittest
 
-from llmse6.commands.tool_adapter import ToolAdapter
+from arox.commands.tool_adapter import ToolAdapter
 
 
 class TestToolAdapter(unittest.TestCase):

@@ -3,10 +3,10 @@ import asyncio
 import sys
 from pathlib import Path
 
-from llmse6 import agent_patterns
-from llmse6.agent_patterns.chat import ChatAgent
-from llmse6.config import TomlConfigParser
-from llmse6.utils import user_input_generator
+from arox import agent_patterns
+from arox.agent_patterns.chat import ChatAgent
+from arox.config import TomlConfigParser
+from arox.utils import user_input_generator
 
 
 async def main():

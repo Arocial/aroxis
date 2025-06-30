@@ -4,7 +4,7 @@ import pytest
 from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 
-from llmse6.utils import deep_merge, run_command, user_input_generator
+from arox.utils import deep_merge, run_command, user_input_generator
 
 
 def test_deep_merge_basic():

@@ -1,4 +1,4 @@
-from llmse6.agent_patterns.state import SimpleState
+from arox.agent_patterns.state import SimpleState
 
 
 class SearchReading:

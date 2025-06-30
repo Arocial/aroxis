@@ -1,5 +1,5 @@
 [project]
-name = "llmse6"
+name = "arox"
 version = "0.0.1"
 authors = [
     {name="fangzhen", email="fangzhen@live.com"},
@@ -27,10 +27,10 @@ dependencies = [
     "pytest-asyncio>=1.0.0",
 ]
 [project.urls]
-Homepage = "https://github.com/fangzhen/llmse6"
+Homepage = "https://github.com/Arocial/arox"
 
 [project.scripts]
-llmse6-coder = "llmse6.compose.coder.main:main"
+arox-coder = "arox.compose.coder.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

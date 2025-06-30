@@ -10,7 +10,7 @@ from kissllm.mcp import (
 from kissllm.mcp.manager import MCPManager
 from kissllm.tools import ToolManager
 
-from llmse6.agent_patterns.state import SimpleState
+from arox.agent_patterns.state import SimpleState
 
 logger = logging.getLogger(__name__)
 

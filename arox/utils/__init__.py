@@ -24,7 +24,7 @@ def parse_dict(value: str) -> dict:
 
 async def user_input_generator(completer=None, input=None, output=None):
     """Async generator that yields user input"""
-    history = FileHistory(".llmse6_history")
+    history = FileHistory(".arox_history")
     kb = KeyBindings()
 
     @kb.add("enter")

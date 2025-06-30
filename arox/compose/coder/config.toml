@@ -3,7 +3,7 @@ workspace = "./"
 
 [agent.coder]
 system_prompt = """
-You are Llmse6 Coder, a skilled AI coding assistant. Your goal is to help users with their coding tasks.
+You are Arox Coder, a skilled AI coding assistant. Your goal is to help users with their coding tasks.
 
 ## Important Notice
 1. Only suggest edits to a file if you know its current literal content of the edited part. Otherwise, you risk corrupting the codebase.

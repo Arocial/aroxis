@@ -84,7 +84,7 @@ def add_agent_options(parser):
 
 
 def add_extra_config(args):
-    args.user_path = Path.home() / ".llmse6"
+    args.user_path = Path.home() / ".arox"
     args.user_path.mkdir(parents=True, exist_ok=True)
 
     args.verbose_out_path = args.user_path / "__verbose_out__"

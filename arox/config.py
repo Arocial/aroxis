@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import tomli
 
-from llmse6.utils import deep_merge
+from arox.utils import deep_merge
 
 
 def parse_dot_config(cli_args: list[str]) -> dict:
@@ -110,16 +110,16 @@ class TomlConfigParser:
 
     def load_config(self) -> Dict[str, Any]:
         """Find and load TOML config file from various locations:
-        - $HOME/.config/llmse6/config.toml
-        - Current directory/.llmse6.config.toml
+        - $HOME/.config/arox/config.toml
+        - Current directory/.arox.config.toml
         - Specified file
         Later file have higher priorities.
         """
         search_paths = []
-        home_config = Path.home() / ".config" / "llmse6" / "config.toml"
+        home_config = Path.home() / ".config" / "arox" / "config.toml"
         search_paths.append(home_config)
         current_dir = Path.cwd()
-        search_paths.append(current_dir / ".llmse6.config.toml")
+        search_paths.append(current_dir / ".arox.config.toml")
         if self.config_files:
             search_paths.extend(self.config_files)
 

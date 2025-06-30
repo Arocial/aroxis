@@ -4,8 +4,8 @@ import sys
 import time
 from pathlib import Path
 
-from llmse6.config import TomlConfigParser
-from llmse6.mcp.aggregator_server import create_aggregator_server_from_config
+from arox.config import TomlConfigParser
+from arox.mcp.aggregator_server import create_aggregator_server_from_config
 
 logger = logging.getLogger(__name__)
 

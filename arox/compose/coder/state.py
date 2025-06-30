@@ -1,7 +1,7 @@
 import logging
 
-from llmse6.agent_patterns.state import SimpleState
-from llmse6.codebase import project
+from arox.agent_patterns.state import SimpleState
+from arox.codebase import project
 
 logger = logging.getLogger(__name__)
 

@@ -17,7 +17,7 @@ from pygments.token import Token
 from tqdm import tqdm
 from tree_sitter_language_pack import get_language, get_parser
 
-from llmse6.utils.io import read_text
+from arox.utils.io import read_text
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)
@@ -28,7 +28,7 @@ SQLITE_ERRORS = (sqlite3.OperationalError, sqlite3.DatabaseError, OSError)
 
 
 class RepoMap:
-    TAGS_CACHE_DIR = ".llmse6/.tags.cache"
+    TAGS_CACHE_DIR = ".arox/.tags.cache"
 
     warned_files = set()
 
@@ -692,10 +692,10 @@ def find_src_files(directory):
 
 
 def get_scm_fname(lang):
-    import llmse6
+    import arox
 
     path = (
-        Path(llmse6.__file__).parent
+        Path(arox.__file__).parent
         / "resources"
         / "tree-sitter-language-pack"
         / f"{lang}-tags.scm"

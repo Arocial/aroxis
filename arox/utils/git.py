@@ -11,7 +11,7 @@ import git
 logger = logging.getLogger(__name__)
 
 # Default directory to store cloned repositories
-DEFAULT_CLONE_DIR = Path.home() / ".cache" / "llmse6" / "mcp_clones"
+DEFAULT_CLONE_DIR = Path.home() / ".cache" / "arox" / "mcp_clones"
 
 
 def get_repo_name_from_url(url: str) -> str:

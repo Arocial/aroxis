@@ -2,7 +2,7 @@ from typing import Optional
 
 import git
 
-from llmse6.agent_patterns.llm_base import LLMBaseAgent
+from arox.agent_patterns.llm_base import LLMBaseAgent
 
 
 class GitCommitAgent(LLMBaseAgent):
@@ -112,8 +112,8 @@ class GitCommitAgent(LLMBaseAgent):
 if __name__ == "__main__":
     import asyncio
 
-    from llmse6 import agent_patterns
-    from llmse6.config import TomlConfigParser
+    from arox import agent_patterns
+    from arox.config import TomlConfigParser
 
     toml_parser = TomlConfigParser()
     agent_patterns.init(toml_parser)

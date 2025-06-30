@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from kissllm.mcp import MCPConfig, SSEMCPConfig, StdioMCPConfig
 from kissllm.mcp.aggregator import MCPAggregatorServer
 
-from llmse6.utils.git import clone_or_update_repo
+from arox.utils.git import clone_or_update_repo
 
 logger = logging.getLogger(__name__)
 

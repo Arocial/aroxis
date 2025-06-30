@@ -6,15 +6,15 @@ from pathlib import Path
 
 from kissllm.tools import LocalToolManager
 
-from llmse6 import agent_patterns, commands, config
-from llmse6.agent_patterns.chat import ChatAgent
-from llmse6.agent_patterns.llm_base import LLMBaseAgent
-from llmse6.commands import CommandCompleter
-from llmse6.compose.coder.state import CoderState
-from llmse6.compose.git_commit import GitCommitAgent
-from llmse6.config import TomlConfigParser
-from llmse6.tools import file_edit, search_reading
-from llmse6.utils import run_command, user_input_generator
+from arox import agent_patterns, commands, config
+from arox.agent_patterns.chat import ChatAgent
+from arox.agent_patterns.llm_base import LLMBaseAgent
+from arox.commands import CommandCompleter
+from arox.compose.coder.state import CoderState
+from arox.compose.git_commit import GitCommitAgent
+from arox.config import TomlConfigParser
+from arox.tools import file_edit, search_reading
+from arox.utils import run_command, user_input_generator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ class CoderComposer:
                     logger.error(f"stdout: {stdout}")
                     logger.error(f"stderr: {stderr}")
 
-            co_author = f"llmse6-coder/{agent.provider_model}"
+            co_author = f"arox-coder/{agent.provider_model}"
             await self.commit_agent.auto_commit_changes(co_author=co_author)
 
         self.coder_agent.add_before_llm_node_hook(before_llm_hook)

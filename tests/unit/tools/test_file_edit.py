@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from llmse6.tools.file_edit import FileEdit
+from arox.tools.file_edit import FileEdit
 
 
 class TestFileEdit:

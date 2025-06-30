@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from kissllm.client import DefaultResponseHandler
 from kissllm.stream import CompletionStream
 
-from llmse6.utils import xml_wrap
+from arox.utils import xml_wrap
 
 logger = logging.getLogger(__name__)
 
