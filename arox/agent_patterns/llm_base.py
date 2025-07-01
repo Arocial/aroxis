@@ -10,6 +10,7 @@ from kissllm.mcp import (
 from kissllm.mcp.manager import MCPManager
 from kissllm.tools import ToolManager
 
+from arox import utils
 from arox.agent_patterns.state import SimpleState
 
 logger = logging.getLogger(__name__)
@@ -28,32 +29,14 @@ class LLMBaseAgent:
         self.name = name
         self.context = context
 
-        agent_group = config_parser.add_argument_group(
-            name=f"agent.{name}", expose_raw=True
-        )
-        agent_group.add_argument("system_prompt", default="")
-        config_parser.add_argument_group(
-            name=f"agent.{name}.model_params", expose_raw=True
-        )
-        config = config_parser.parse_args()
-        self.config = config
-
-        self.workspace = Path(config.workspace)
-        if not self.workspace.is_absolute():
-            self.workspace = self.workspace.absolute()
-        group_config = getattr(config.agent, name)
-        self.agent_config = group_config
-
-        # Load default metadata using configargparse
-        self.system_prompt = group_config.system_prompt
-        self.model_params = group_config.model_params
-        self.provider_model = self.model_params.pop("model", config.model)
-        print(f"Using model {self.provider_model} for {name}")
-
+        self.config_parser = config_parser
+        self.config = self.parse_configs()
         # Manage tool specs.
         tool_managers = {}
         self.mcp_servers = (
-            config.agent.mcp_servers if hasattr(config.agent, "mcp_servers") else None
+            self.config.agent.mcp_servers
+            if hasattr(self.config.agent, "mcp_servers")
+            else None
         )
         if self.mcp_servers:
             mcp_configs = []
@@ -78,6 +61,50 @@ class LLMBaseAgent:
         self.tool_registry = ToolManager(**tool_managers)
 
         self.state = state_cls(self)
+
+    def set_model(self, model_ref: str):
+        self.model_ref = model_ref
+        config_parser = self.config_parser
+        model_group = config_parser.add_argument_group(name=f"model.{self.model_ref}")
+        model_group.add_argument("provider_model", default=self.model_ref)
+        config_parser.add_argument_group(
+            name=f"model.{self.model_ref}.params", expose_raw=True
+        )
+        config = config_parser.parse_args()
+        model_config = getattr(config.model, self.model_ref)
+
+        model_params = model_config.params
+        self.model_params = utils.deep_merge(self.agent_model_params, model_params)
+        self.provider_model = model_config.provider_model
+        print(f"Using model {self.provider_model} for {self.name}")
+        return config
+
+    def parse_configs(self):
+        config_parser = self.config_parser
+        name = self.name
+        agent_group = config_parser.add_argument_group(
+            name=f"agent.{name}", expose_raw=True
+        )
+        agent_group.add_argument("system_prompt", default="")
+        agent_group.add_argument("model_ref", default="")
+        config_parser.add_argument_group(
+            name=f"agent.{name}.model_params", expose_raw=True
+        )
+        config = config_parser.parse_args()
+
+        self.workspace = Path(config.workspace)
+        if not self.workspace.is_absolute():
+            self.workspace = self.workspace.absolute()
+        group_config = getattr(config.agent, name)
+        self.agent_config = group_config
+
+        # Load default metadata using configargparse
+        self.system_prompt = group_config.system_prompt
+        self.model_ref = group_config.model_ref or config.model_ref
+        self.agent_model_params = group_config.model_params
+
+        config = self.set_model(self.model_ref)
+        return config
 
     async def _run_before_hooks(self, input_content: str):
         if hasattr(self, "before_llm_node_hooks"):

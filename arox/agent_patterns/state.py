@@ -138,8 +138,11 @@ class SimpleState:
             content = xml_wrap([item])
             # remove all outdated file contents and append updated.
             if item[0] == "files":
-                messages = [msg for msg in messages
-                            if not msg.get("content", "").strip().startswith("<files>")]
+                messages = [
+                    msg
+                    for msg in messages
+                    if not msg.get("content", "").strip().startswith("<files>")
+                ]
             if content:
                 messages.append({"role": "user", "content": content})
 

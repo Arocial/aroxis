@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class FileEdit:
-    def __init__(self, diff_agent: LLMBaseAgent, state: SimpleState, refresh_edited=False):
+    def __init__(
+        self, diff_agent: LLMBaseAgent, state: SimpleState, refresh_edited=False
+    ):
         self.diff_agent = diff_agent
         self.agent_state = state
         self.refresh_edited = refresh_edited

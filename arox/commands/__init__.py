@@ -119,8 +119,7 @@ class ModelCommand(Command):
         if not new_model:
             print("Please specify a model name")
             return
-        self.agent.provider_model = new_model
-        print(f"Switched to model: {new_model}")
+        self.agent.set_model(new_model)
 
 
 class SaveCommand(Command):
