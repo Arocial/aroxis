@@ -21,7 +21,7 @@ def setup_llm_observability(conf):
 
 def add_agent_options(parser):
     parser.add_argument(
-        "model",
+        "model_ref",
         default="deepseek/deepseek-chat",
         help="Model to use with ChatLiteLLM",
     )
