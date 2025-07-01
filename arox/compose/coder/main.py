@@ -49,11 +49,6 @@ class CoderComposer:
         agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 
-        diff_agent = LLMBaseAgent("smart-diff", toml_parser)
-        file_edit_tool = file_edit.FileEdit(diff_agent)
-        file_edit_tool.register_tools(local_tool_manager)
-        self.diff_agent = diff_agent
-
         git_commit_agent = GitCommitAgent("git_commit_agent", toml_parser)
         self.commit_agent = git_commit_agent
 
@@ -64,6 +59,12 @@ class CoderComposer:
             CoderState,
             context={"commit_agent": self.commit_agent},
         )
+
+        diff_agent = LLMBaseAgent("smart-diff", toml_parser)
+        file_edit_tool = file_edit.FileEdit(diff_agent, coder_agent.state)
+        file_edit_tool.register_tools(local_tool_manager)
+        self.diff_agent = diff_agent
+
         sr_tool = search_reading.SearchReading(coder_agent.state)
         sr_tool.register_tools(local_tool_manager)
 

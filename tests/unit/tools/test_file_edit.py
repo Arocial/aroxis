@@ -9,7 +9,7 @@ from arox.tools.file_edit import FileEdit
 class TestFileEdit:
     @classmethod
     def setup_class(cls):
-        cls.tool = FileEdit(None)
+        cls.tool = FileEdit(None, None)
 
     @pytest.mark.asyncio
     async def test_write_to_file_new_file(self):

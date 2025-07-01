@@ -40,8 +40,10 @@ class ChatFiles:
         return {"succeed": succeed, "not_exist": not_exist}
 
     def add(self, f: Path):
-        self._chat_files.append(f)
-        self._pending_files.append(f)
+        if f not in self._chat_files:
+            self._chat_files.append(f)
+        if f not in self._pending_files:
+            self._pending_files.append(f)
 
     def remove(self, f: Path):
         if f in self._chat_files:
@@ -55,6 +57,9 @@ class ChatFiles:
     def clear(self):
         self._pending_files.clear()
         self._chat_files.clear()
+
+    def have_pending(self):
+        return bool(self._pending_files)
 
     def clear_pending(self):
         self._pending_files.clear()
@@ -73,11 +78,11 @@ class ChatFiles:
     def read_files(self):
         file_content = ""
         fpaths = []
-        files = self._pending_files
-        if not files:
+        if not self._chat_files:
             return "", []
 
-        for fname in files:
+        # This is intended to check self._pending_files but add self._chat_files.
+        for fname in self._chat_files:
             p = fname if fname.is_absolute() else self.workspace / fname
             try:
                 with open(p, "r") as f:
@@ -115,8 +120,8 @@ class SimpleState:
         if not messages_meta.get("system"):
             items.append(("system", self.system_prompt))
             self.message_meta["system"] = True
-        file_contents, _ = self.assemble_chat_files()
-        if file_contents:
+        if self.chat_files.have_pending() or user_input:
+            file_contents, _ = self.assemble_chat_files()
             items.append(("files", file_contents))
         if user_input:
             items.append(("user_instruction", user_input))
@@ -125,15 +130,18 @@ class SimpleState:
     def assemble_prompt(self, user_input: str):
         messages = self.messages
         items = self._get_message_items(user_input)
-        has_new = False
+        has_new = bool(items)
         for item in items:
             if item[0] == "system":
                 messages.append({"role": "system", "content": item[1]})
                 continue
             content = xml_wrap([item])
+            # remove all outdated file contents and append updated.
+            if item[0] == "files":
+                messages = [msg for msg in messages
+                            if not msg.get("content", "").strip().startswith("<files>")]
             if content:
                 messages.append({"role": "user", "content": content})
-                has_new = True
 
         return messages, has_new
 
