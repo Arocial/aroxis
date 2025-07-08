@@ -65,10 +65,10 @@ class LLMBaseAgent:
     def set_model(self, model_ref: str):
         self.model_ref = model_ref
         config_parser = self.config_parser
-        model_group = config_parser.add_argument_group(name=f"model.{self.model_ref}")
+        model_group = config_parser.add_argument_group(name=f"model.'{self.model_ref}'")
         model_group.add_argument("provider_model", default=self.model_ref)
         config_parser.add_argument_group(
-            name=f"model.{self.model_ref}.params", expose_raw=True
+            name=f"model.'{self.model_ref}'.params", expose_raw=True
         )
         config = config_parser.parse_args()
         model_config = getattr(config.model, self.model_ref)
