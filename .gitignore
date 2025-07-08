@@ -3,6 +3,7 @@ config.yaml
 __pycache__
 __verbose_out__
 dist/
+build/
 *.egg-info/
 .arox*
 .coverage
