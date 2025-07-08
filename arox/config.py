@@ -154,7 +154,21 @@ class ArgumentGroup:
         return self.parsed
 
     def _parse_group(self):
-        groups = self.name.split(".")
+        groups = []
+        current = []
+        in_quotes = False
+
+        # Parse the group name with support for quoted segments
+        for char in self.name:
+            if char == '"' or char == "'":
+                in_quotes = not in_quotes
+            elif char == "." and not in_quotes:
+                groups.append("".join(current))
+                current = []
+            else:
+                current.append(char)
+        groups.append("".join(current))
+
         raw = self.parent._raw_data
 
         for g in groups:
