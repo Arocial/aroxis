@@ -116,6 +116,7 @@ class SimpleState:
 
     def _get_message_items(self, user_input):
         items = []
+        # TODO: replace message_meta with local_metadata in message
         messages_meta = self.message_meta
         if not messages_meta.get("system"):
             items.append(("system", self.system_prompt))
@@ -126,6 +127,21 @@ class SimpleState:
         if user_input:
             items.append(("user_instruction", user_input))
         return items
+
+    def _append_with_typ_meta(self, messages: list, typ, content):
+        """Remove message with type `typ` and append new content."""
+        replaced = list(
+            filter(
+                lambda msg: msg.get("local_metadata", {}).get("type") == typ, messages
+            )
+        )
+        for r in replaced:
+            messages.remove(r)
+
+        if content:
+            messages.append(
+                {"role": "user", "content": content, "local_metadata": {"type": typ}}
+            )
 
     def assemble_prompt(self, user_input: str):
         messages = self.messages
@@ -138,13 +154,14 @@ class SimpleState:
             content = xml_wrap([item])
             # remove all outdated file contents and append updated.
             if item[0] == "files":
-                messages = [
-                    msg
-                    for msg in messages
-                    if not msg.get("content", "").strip().startswith("<files>")
-                ]
-            if content:
+                self._append_with_typ_meta(messages, "files", content)
+            elif content:
                 messages.append({"role": "user", "content": content})
+
+        if self.agent.emphasize_prompt:
+            self._append_with_typ_meta(
+                messages, "emphasize_prompt", self.agent.emphasize_prompt
+            )
 
         return messages, has_new
 

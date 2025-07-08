@@ -86,6 +86,7 @@ class LLMBaseAgent:
             name=f"agent.{name}", expose_raw=True
         )
         agent_group.add_argument("system_prompt", default="")
+        agent_group.add_argument("emphasize_prompt", default="")
         agent_group.add_argument("model_ref", default="")
         config_parser.add_argument_group(
             name=f"agent.{name}.model_params", expose_raw=True
@@ -100,6 +101,7 @@ class LLMBaseAgent:
 
         # Load default metadata using configargparse
         self.system_prompt = group_config.system_prompt
+        self.emphasize_prompt = group_config.emphasize_prompt
         self.model_ref = group_config.model_ref or config.model_ref
         self.agent_model_params = group_config.model_params
 

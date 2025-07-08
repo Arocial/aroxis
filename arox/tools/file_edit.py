@@ -52,7 +52,6 @@ class FileEdit:
             content: The content to write to the file. See 'Content' section blow.
 
         Content:
-
             You can output a simplified version of the code block that highlights the changes necessary and adds comments to indicate where unchanged code has been skipped. Include some unchanged code before and after your edits, especially when inserting new code into an existing file. For example:
 
             import json
