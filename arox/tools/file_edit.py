@@ -120,12 +120,12 @@ class FileEdit:
             diff_lines = diff.splitlines()
             s_start = s_end = r_start = r_end = 0
             for idx, line in enumerate(diff_lines):
-                if "<<<<<<< SEARCH" == line:
+                if re.match(r"^<{6,} SEARCH$", line):
                     s_start = idx + 1
-                elif "=======" == line:
+                elif re.match(r"^={6,}$", line):
                     s_end = idx
                     r_start = idx + 1
-                elif ">>>>>>> REPLACE" == line:
+                elif re.match(r"^>{6,} REPLACE$", line):
                     r_end = idx
                     if not all([s_start, s_end, r_start, r_end]):
                         # Indicates incorrect format
