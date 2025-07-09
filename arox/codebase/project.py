@@ -35,5 +35,5 @@ class ProjectManager:
             tracked_files = repo.git.ls_files().splitlines()
             return sorted(tracked_files)
         except (git.InvalidGitRepositoryError, git.GitCommandError) as e:
-            logger.warning(f"Failed to get git tracked files: {e}")
+            logger.debug(f"Failed to get git tracked files: {e}")
             return []
