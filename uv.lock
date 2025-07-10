@@ -38,7 +38,6 @@ dependencies = [
     { name = "networkx", extra = ["default"] },
     { name = "prompt-toolkit" },
     { name = "pygments" },
-    { name = "pytest-asyncio" },
     { name = "pyyaml" },
     { name = "tomli" },
     { name = "tqdm" },
@@ -48,6 +47,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pytest-asyncio" },
 ]
 
 [package.metadata]
@@ -60,7 +60,6 @@ requires-dist = [
     { name = "networkx", extras = ["default"], specifier = ">=3.5" },
     { name = "prompt-toolkit", specifier = ">=3.0" },
     { name = "pygments", specifier = ">=2.19.1" },
-    { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "tomli" },
     { name = "tqdm", specifier = ">=4.67.1" },
@@ -68,7 +67,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.4" }]
+dev = [
+    { name = "pytest", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=1.0.0" },
+]
 
 [[package]]
 name = "asyncio"
