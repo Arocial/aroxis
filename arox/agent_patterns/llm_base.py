@@ -22,6 +22,7 @@ class LLMBaseAgent:
         name,
         config_parser,
         local_tool_manager=None,
+        use_flexible_toolcall=True,
         state_cls=SimpleState,
         context={},
     ):
@@ -60,7 +61,11 @@ class LLMBaseAgent:
 
         self.tool_registry = ToolManager(**tool_managers)
 
-        self.state = state_cls(self)
+        self.state = state_cls(
+            self,
+            use_flexible_toolcall=use_flexible_toolcall,
+            tool_registry=self.tool_registry,
+        )
 
     def set_model(self, model_ref: str):
         self.model_ref = model_ref
@@ -109,37 +114,39 @@ class LLMBaseAgent:
         return config
 
     async def _run_before_hooks(self, input_content: str):
-        if hasattr(self, "before_llm_node_hooks"):
-            for hook in self.before_llm_node_hooks:
+        if hasattr(self, "before_step_hooks"):
+            for hook in self.before_step_hooks:
                 await hook(self, input_content)
 
     async def _run_after_hooks(self, input_content: str):
-        if hasattr(self, "after_llm_node_hooks"):
-            for hook in self.after_llm_node_hooks:
+        if hasattr(self, "after_step_hooks"):
+            for hook in self.after_step_hooks:
                 await hook(self, input_content)
 
-    async def llm_node(self, input_content: str):
+    async def step(self, input_content: str):
         await self._run_before_hooks(input_content)
-        messages, _ = self.state.assemble_prompt(input_content)
+        self.state.add_user_input(input_content)
         self.model_params["stream"] = True
         await LLMClient(
-            provider_model=self.provider_model, tool_registry=self.tool_registry
+            provider_model=self.provider_model
         ).async_completion_with_tool_execution(
-            messages=messages,
-            handle_response=self.state.response_handler,
+            state=self.state,
             **self.model_params,
         )
         await self._run_after_hooks(input_content)
 
+    def reset(self):
+        return self.state.reset()
+
     def last_message(self):
         return self.state.last_message()
 
-    def add_before_llm_node_hook(self, hook):
-        if not hasattr(self, "before_llm_node_hooks"):
-            self.before_llm_node_hooks = []
-        self.before_llm_node_hooks.append(hook)
+    def add_before_step_hook(self, hook):
+        if not hasattr(self, "before_step_hooks"):
+            self.before_step_hooks = []
+        self.before_step_hooks.append(hook)
 
-    def add_after_llm_node_hook(self, hook):
-        if not hasattr(self, "after_llm_node_hooks"):
-            self.after_llm_node_hooks = []
-        self.after_llm_node_hooks.append(hook)
+    def add_after_step_hook(self, hook):
+        if not hasattr(self, "after_step_hooks"):
+            self.after_step_hooks = []
+        self.after_step_hooks.append(hook)

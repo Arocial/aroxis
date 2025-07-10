@@ -1,8 +1,7 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
 
-from kissllm.client import DefaultResponseHandler
+from kissllm.client import State
 from kissllm.stream import CompletionStream
 
 from arox.utils import xml_wrap
@@ -100,15 +99,18 @@ class ChatFiles:
         return file_content, fpaths
 
 
-class SimpleState:
-    def __init__(self, agent):
+class SimpleState(State):
+    def __init__(
+        self,
+        agent,
+        use_flexible_toolcall=True,
+        tool_registry=None,
+    ):
+        super().__init__(use_flexible_toolcall, tool_registry)
         self.agent = agent
         self.system_prompt = self.agent.system_prompt
-        self.messages: List[Dict[str, Any]] = []
-        self.message_meta = {}
         self.workspace = self.agent.workspace
         self.chat_files = ChatFiles(self.workspace)
-        self.response_handler = ResponseHandler(self)
         self.reset()
 
     def assemble_chat_files(self) -> tuple[str, list[Path]]:
@@ -143,8 +145,11 @@ class SimpleState:
                 {"role": "user", "content": content, "local_metadata": {"type": typ}}
             )
 
-    def assemble_prompt(self, user_input: str):
-        messages = self.messages
+    def add_user_input(self, user_input: str):
+        return self._assemble_prompt(user_input)
+
+    def _assemble_prompt(self, user_input: str):
+        messages = self._messages
         items = self._get_message_items(user_input)
         has_new = bool(items)
         for item in items:
@@ -163,48 +168,28 @@ class SimpleState:
                 messages, "emphasize_prompt", self.agent.emphasize_prompt
             )
 
-        return messages, has_new
+        if self.use_flexible_toolcall:
+            self.inject_tools_into_messages()
 
-    def last_message(self) -> str:
-        if self.messages and "content" in self.messages[-1]:
-            return self.messages[-1]["content"]
-        else:
-            return ""
+        return has_new
 
     def reset(self):
+        self._messages = []
+        self.message_meta = {}
         self.chat_files.clear()
-
-
-class ResponseHandler(DefaultResponseHandler):
-    def __init__(self, state: SimpleState):
-        super().__init__(state.messages)
-        self.state = state
 
     async def accumulate_response(self, response):
         if isinstance(response, CompletionStream):
-            print("\n======Streaming Assistant Response:======")
-            print(
-                "\n======WARNING: Escape characters might be displayed incorrectly======\n"
-            )
-            last_character = ""
+            print("\n======Streaming Assistant Response Begin:======")
             async for content in response.iter_content():
                 if not content:
                     continue
-                if last_character == "\\":
-                    content = "\b \b\\" + content
-                print(
-                    content.replace(r"\n", "\n")
-                    .replace(r"\"", '"')
-                    .replace("\\\\", "\\"),
-                    end="",
-                    flush=True,
-                )
-                last_character = content[-1]
-            print("\n")
+                print(content, end="", flush=True)
+            print("\n======Streaming Assistant Response End:======")
         return await super().accumulate_response(response)
 
-    async def __call__(self, response):
-        messages, continu = await super().__call__(response)
-        messages, new_content = self.state.assemble_prompt("")
+    async def handle_response(self, response, stream):
+        continu = await super().handle_response(response, stream)
+        new_content = self._assemble_prompt("")
 
-        return messages, new_content and continu
+        return new_content and continu

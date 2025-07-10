@@ -56,7 +56,7 @@ class CoderComposer:
             "coder",
             toml_parser,
             local_tool_manager,
-            CoderState,
+            state_cls=CoderState,
             context={"commit_agent": self.commit_agent},
         )
 
@@ -98,8 +98,8 @@ class CoderComposer:
             co_author = f"arox-coder/{agent.provider_model}"
             await self.commit_agent.auto_commit_changes(co_author=co_author)
 
-        self.coder_agent.add_before_llm_node_hook(before_llm_hook)
-        self.coder_agent.add_after_llm_node_hook(after_llm_hook)
+        self.coder_agent.add_before_step_hook(before_llm_hook)
+        self.coder_agent.add_after_step_hook(after_llm_hook)
 
         if args.dump_default_config:
             logger.debug(f"Dumping default config to {args.dump_default_config}")
