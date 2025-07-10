@@ -7,8 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 class CoderState(SimpleState):
-    def __init__(self, agent):
-        super().__init__(agent)
+    def __init__(
+        self,
+        agent,
+        use_flexible_toolcall=True,
+        tool_registry=None,
+    ):
+        super().__init__(agent, use_flexible_toolcall, tool_registry)
         self.project_manager = project.ProjectManager(self.workspace)
         self.chat_files.set_candidate_generator(self.project_manager.get_tracked_files)
 

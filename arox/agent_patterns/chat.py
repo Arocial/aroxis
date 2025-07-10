@@ -11,11 +11,17 @@ class ChatAgent(LLMBaseAgent):
         name,
         config_parser=None,
         local_tool_manager=None,
+        use_flexible_toolcall=True,
         state_cls=SimpleState,
         context={},
     ):
         super().__init__(
-            name, config_parser, local_tool_manager, state_cls, context=context
+            name,
+            config_parser,
+            local_tool_manager,
+            use_flexible_toolcall,
+            state_cls,
+            context=context,
         )
 
         self.command_manager = CommandManager(self)
@@ -38,4 +44,4 @@ class ChatAgent(LLMBaseAgent):
                     continue
                 is_command = await self.command_manager.try_execute_command(user_input)
                 if not is_command:
-                    await self.llm_node(user_input)
+                    await self.step(user_input)

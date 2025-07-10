@@ -133,7 +133,7 @@ class SaveCommand(Command):
 
     def execute(self, name: str, arg: str):
         output_file = arg if arg else self.default_file
-        last_message = self.agent.state.last_message()
+        last_message = self.agent.last_message()
         self._save_content(last_message, self.tag_name, output_file)
         print(f"Saved to {output_file}!")
 
