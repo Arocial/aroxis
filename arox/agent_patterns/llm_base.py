@@ -129,7 +129,7 @@ class LLMBaseAgent:
         self.model_params["stream"] = True
         await LLMClient(
             provider_model=self.provider_model
-        ).async_completion_with_tool_execution(
+        ).async_completion_multi_round(
             state=self.state,
             **self.model_params,
         )
