@@ -110,18 +110,18 @@ class TomlConfigParser:
 
     def load_config(self) -> Dict[str, Any]:
         """Find and load TOML config file from various locations:
+        - config file by developer
         - $HOME/.config/arox/config.toml
         - Current directory/.arox.config.toml
-        - Specified file
         Later file have higher priorities.
         """
         search_paths = []
+        if self.config_files:
+            search_paths.extend(self.config_files)
         home_config = Path.home() / ".config" / "arox" / "config.toml"
         search_paths.append(home_config)
         current_dir = Path.cwd()
         search_paths.append(current_dir / ".arox.config.toml")
-        if self.config_files:
-            search_paths.extend(self.config_files)
 
         config = {}
         for path in search_paths:

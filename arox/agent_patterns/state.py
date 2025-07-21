@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from kissllm.client import State
@@ -163,10 +164,13 @@ class SimpleState(State):
             elif content:
                 messages.append({"role": "user", "content": content})
 
-        if self.agent.emphasize_prompt:
-            self._append_with_typ_meta(
-                messages, "emphasize_prompt", self.agent.emphasize_prompt
-            )
+        # Append model specific prompt to messages
+        for model_prompt in self.agent.model_prompt:
+            if re.search(model_prompt["pattern"], self.agent.model_ref):
+                self._append_with_typ_meta(
+                    messages, "model_prompt", model_prompt["prompt"]
+                )
+                break
 
         if self.use_flexible_toolcall:
             self.inject_tools_into_messages()

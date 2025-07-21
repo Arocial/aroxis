@@ -91,10 +91,12 @@ class LLMBaseAgent:
             name=f"agent.{name}", expose_raw=True
         )
         agent_group.add_argument("system_prompt", default="")
-        agent_group.add_argument("emphasize_prompt", default="")
         agent_group.add_argument("model_ref", default="")
         config_parser.add_argument_group(
             name=f"agent.{name}.model_params", expose_raw=True
+        )
+        config_parser.add_argument_group(
+            name=f"agent.{name}.model_prompt", expose_raw=True
         )
         config = config_parser.parse_args()
 
@@ -106,9 +108,19 @@ class LLMBaseAgent:
 
         # Load default metadata using configargparse
         self.system_prompt = group_config.system_prompt
-        self.emphasize_prompt = group_config.emphasize_prompt
         self.model_ref = group_config.model_ref or config.model_ref
         self.agent_model_params = group_config.model_params
+        self.model_prompt = []
+        mp = group_config.model_prompt
+        for k, v in mp.items():
+            if not k.endswith("_pattern"):
+                pattern = mp.get(f"{k}_pattern", "")
+                self.model_prompt.append(
+                    {
+                        "prompt": v,
+                        "pattern": pattern,
+                    }
+                )
 
         config = self.set_model(self.model_ref)
         return config
