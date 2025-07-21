@@ -15,3 +15,5 @@ build/
 !.aider.instructions.md
 
 *.testres
+
+pyrightconfig.json
