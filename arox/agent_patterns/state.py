@@ -120,7 +120,7 @@ class SimpleState(State):
         items = []
         # TODO: replace message_meta with local_metadata in message
         messages_meta = self.message_meta
-        if not messages_meta.get("system"):
+        if not messages_meta.get("system") and self.system_prompt:
             items.append(("system", self.system_prompt))
             self.message_meta["system"] = True
         if self.chat_files.have_pending() or user_input:
