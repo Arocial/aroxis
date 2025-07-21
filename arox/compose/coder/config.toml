@@ -5,6 +5,7 @@ workspace = "./"
 emphasize_prompt = '''
 # Important Notes
 - Only suggest file edits when you know the exact current content of the section being modified.
+- All tool calls will be invoked one by one unless revoked.
 '''
 
 system_prompt = '''
