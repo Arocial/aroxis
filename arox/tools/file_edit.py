@@ -150,9 +150,13 @@ class FileEdit:
 
             file_path.write_text(content)
             self._refresh_edited_files(path)
-            return f"Successfully updated {file_path}"
+            msg = f"Successfully updated {file_path}"
+            logger.info(msg)
+            return msg
         except Exception as e:
-            return f"Error replacing in file: {str(e)}"
+            msg = f"Error replacing in file `{path}` with exception: {str(e)}"
+            logger.info(msg)
+            return msg
 
     def _find_with_placeholder(self, content: str, search_pattern: str) -> tuple:
         """
