@@ -10,8 +10,10 @@ class GitCommitAgent(LLMBaseAgent):
     An agent that generates commit messages based on git diff output.
     """
 
-    def __init__(self, name: str, config_parser=None, local_tool_manager=None):
-        super().__init__(name, config_parser, local_tool_manager)
+    def __init__(
+        self, name: str, config_parser=None, local_tool_manager=None, io_channel=None
+    ):
+        super().__init__(name, config_parser, local_tool_manager, io_channel=io_channel)
 
     async def generate_commit_message(self, diff: Optional[str] = None) -> str:
         """

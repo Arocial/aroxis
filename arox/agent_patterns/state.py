@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from kissllm.client import State
+from kissllm.io import IOTypeEnum, OutputItem
 from kissllm.stream import CompletionStream
 
 from arox.utils import xml_wrap
@@ -184,12 +185,13 @@ class SimpleState(State):
 
     async def accumulate_response(self, response):
         if isinstance(response, CompletionStream):
-            print("\n======Streaming Assistant Response Begin:======")
+            io_channel = self.agent.io_channel
+            channel = io_channel.create_sub_channel(IOTypeEnum.assistant)
             async for content in response.iter_content():
                 if not content:
                     continue
-                print(content, end="", flush=True)
-            print("\n======Streaming Assistant Response End:======")
+                await channel.write(OutputItem(content=content))
+
         return await super().accumulate_response(response)
 
     async def handle_response(self, response, stream):

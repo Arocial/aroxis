@@ -2,7 +2,6 @@ from arox import commands
 from arox.agent_patterns.llm_base import LLMBaseAgent
 from arox.agent_patterns.state import SimpleState
 from arox.commands.manager import CommandManager
-from arox.utils import user_input_generator
 
 
 class ChatAgent(LLMBaseAgent):
@@ -14,6 +13,7 @@ class ChatAgent(LLMBaseAgent):
         use_flexible_toolcall=True,
         state_cls=SimpleState,
         context={},
+        io_channel=None,
     ):
         super().__init__(
             name,
@@ -22,6 +22,7 @@ class ChatAgent(LLMBaseAgent):
             use_flexible_toolcall,
             state_cls,
             context=context,
+            io_channel=io_channel,
         )
 
         self.command_manager = CommandManager(self)
@@ -29,17 +30,10 @@ class ChatAgent(LLMBaseAgent):
     def register_commands(self, cmds: list[commands.Command]):
         self.command_manager.register_commands(cmds)
 
-    async def start(self, input_gen=None):
-        """Start the agent with optional input generator
-
-        Args:
-            input_gen: Generator yielding user input strings. If None, uses default generator.
-        """
-        if input_gen is None:
-            input_gen = user_input_generator()
-
+    async def start(self):
+        """Start the agent with optional input generator"""
         async with self.tool_registry:
-            async for user_input in input_gen:
+            async for user_input in self.io_channel.read():
                 if not user_input.strip():
                     continue
                 is_command = await self.command_manager.try_execute_command(user_input)
