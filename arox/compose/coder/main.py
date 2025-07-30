@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -9,19 +8,18 @@ from kissllm.tools import LocalToolManager
 from arox import agent_patterns, commands, config
 from arox.agent_patterns.chat import ChatAgent
 from arox.agent_patterns.llm_base import LLMBaseAgent
-from arox.commands import CommandCompleter
 from arox.compose.coder.state import CoderState
 from arox.compose.git_commit import GitCommitAgent
 from arox.config import TomlConfigParser
 from arox.tools import file_edit, search_reading
-from arox.utils import run_command, user_input_generator
+from arox.utils import run_command
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class CoderComposer:
-    def __init__(self):
+    def __init__(self, io_channel=None):
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
@@ -49,7 +47,13 @@ class CoderComposer:
         agent_patterns.init(toml_parser)
         local_tool_manager = LocalToolManager()
 
-        git_commit_agent = GitCommitAgent("git_commit_agent", toml_parser)
+        self.io_channel = io_channel
+
+        git_commit_agent = GitCommitAgent(
+            "git_commit_agent",
+            toml_parser,
+            io_channel=io_channel.create_sub_channel("git_commit"),
+        )
         self.commit_agent = git_commit_agent
 
         coder_agent = ChatAgent(
@@ -58,9 +62,14 @@ class CoderComposer:
             local_tool_manager,
             state_cls=CoderState,
             context={"commit_agent": self.commit_agent},
+            io_channel=io_channel.create_sub_channel("coder"),
         )
 
-        diff_agent = LLMBaseAgent("smart-diff", toml_parser)
+        diff_agent = LLMBaseAgent(
+            "smart-diff",
+            toml_parser,
+            io_channel=io_channel.create_sub_channel("smart-diff"),
+        )
         file_edit_tool = file_edit.FileEdit(diff_agent, coder_agent.state)
         file_edit_tool.register_tools(local_tool_manager)
         self.diff_agent = diff_agent
@@ -109,16 +118,15 @@ class CoderComposer:
 
     async def run(self):
         logger.debug("Starting coder agent")
-        await self.coder_agent.start(
-            user_input_generator(
-                completer=CommandCompleter(self.coder_agent.command_manager)
-            )
-        )
+        await self.coder_agent.start()
 
 
 def main():
-    asyncio.run(CoderComposer().run())
+    from arox.compose.coder.ui import CoderTUI
+
+    io_channel = CoderTUI()
+    io_channel.run()
 
 
 if __name__ == "__main__":
-    main
+    main()

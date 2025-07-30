@@ -25,10 +25,12 @@ class LLMBaseAgent:
         use_flexible_toolcall=True,
         state_cls=SimpleState,
         context={},
+        io_channel=None,
     ):
         self.uuid = str(uuid.uuid4())
         self.name = name
         self.context = context
+        self.io_channel = io_channel
 
         self.config_parser = config_parser
         self.config = self.parse_configs()
@@ -140,7 +142,7 @@ class LLMBaseAgent:
         self.state.add_user_input(input_content)
         self.model_params["stream"] = True
         await LLMClient(
-            provider_model=self.provider_model
+            provider_model=self.provider_model, io_channel=self.io_channel
         ).async_completion_multi_round(
             state=self.state,
             **self.model_params,
