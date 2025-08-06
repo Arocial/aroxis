@@ -4,12 +4,29 @@ from enum import Enum
 
 from kissllm.io import IOChannel, IOTypeEnum, OutputItem
 from kissllm.utils import format_prompt
+from textual import events
 from textual.app import App, ComposeResult
 from textual.widgets import Collapsible, Footer, Label, TextArea
 
 from arox.utils import user_input_generator as user_input_generator
 
 logger = logging.getLogger(__name__)
+
+
+def _hack_textual_keys():
+    from textual._ansi_sequences import ANSI_SEQUENCES_KEYS
+
+    class HKeys(str, Enum):
+        @property
+        def value(self) -> str:
+            return super().value
+
+        AltEnter = "alt+enter"
+
+    ANSI_SEQUENCES_KEYS["\x1b\r"] = (HKeys.AltEnter,)
+
+
+_hack_textual_keys()
 
 
 class TUIByIO(App, IOChannel):
@@ -47,11 +64,22 @@ class TUIByIO(App, IOChannel):
 class UserInput(TextArea):
     BINDINGS = [
         ("ctrl+j", "submit", "Submit"),
+        ("alt+enter", "submit", "Submit"),
     ]
 
     def __init__(self, input_future, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.input_future = input_future
+
+    async def _on_key(self, event: events.Key) -> None:
+        # Textual parses shift+enter this way.
+        # One can use [tkrec](https://github.com/Textualize/textual-key-recorder/)
+        # to see the keys result in textual app.
+        if event.key == "enter" and event.character is None:
+            event.prevent_default()
+            self.action_submit()
+        else:
+            return await super()._on_key(event)
 
     def action_submit(self) -> None:
         """Submit the input."""
