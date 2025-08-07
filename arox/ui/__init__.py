@@ -2,7 +2,7 @@ import asyncio
 import logging
 from enum import Enum
 
-from kissllm.io import IOChannel, IOTypeEnum, OutputItem
+from kissllm.io import IOChannel, IOTypeEnum
 from kissllm.utils import format_prompt
 from textual import events
 from textual.app import App, ComposeResult
@@ -89,15 +89,15 @@ class UserInput(TextArea):
 
 
 class CollapsibleLabel(Collapsible):
-    def __init__(self, *args, **kwargs):
-        self.label_widget = Label(markup=False, classes="wrapped")
-        super().__init__(self.label_widget, *args, **kwargs)
+    def __init__(self, content="", title="", collapsed=True):
+        self.label_widget = Label(content, markup=False, classes="wrapped")
+        super().__init__(self.label_widget, title=title, collapsed=collapsed)
 
     def update(self, content):
         self.label_widget.update(content)
 
 
-class TextualIOChannel:
+class TextualIOChannel(IOChannel):
     def __init__(self, parent, channel_type, title=""):
         self.parent = parent
         self.app = self.parent.app
@@ -127,19 +127,58 @@ class TextualIOChannel:
             await self.app.mount(collapsible)
             yield user_input
 
-    async def write(self, output_item: OutputItem):
+    async def write(self, content, metadata=None):
+        output_widget = Label(str(content))
+        await self.app.mount(output_widget)
+
+    def create_sub_channel(self, channel_type, title=""):
+        if channel_type == IOTypeEnum.prompt_message:
+            return PromptMessageWidget(self, channel_type, title)
+        elif channel_type == IOTypeEnum.streaming_assistant:
+            return StreamingOutputWidget(self, channel_type, title)
+
+        return self.__class__(self, channel_type, title)
+
+
+class PromptMessageWidget(IOChannel):
+    def __init__(self, parent, channel_type, title=""):
+        self.parent = parent
+        self.app = self.parent.app
+        title = title or (
+            str(channel_type.value)
+            if isinstance(channel_type, Enum)
+            else str(channel_type)
+        )
+        self.title = f"{self.parent.title}.{title}"
+
+    async def write(self, content, metadata=None):
+        output_widget = CollapsibleLabel(
+            "\n".join(format_prompt(content)),
+            title=self.title,
+            collapsed=True,
+        )
+        await self.app.mount(output_widget)
+
+
+class StreamingOutputWidget(IOChannel):
+    def __init__(self, parent, channel_type, title=""):
+        self.parent = parent
+        self.app = self.parent.app
+        self.output_widget = None
+        title = title or (
+            str(channel_type.value)
+            if isinstance(channel_type, Enum)
+            else str(channel_type)
+        )
+        self.title = f"{self.parent.title}.{title}"
+        self.accumulated_content = ""
+
+    async def write(self, content, metadata=None):
         if self.output_widget is None:
             self.output_widget = CollapsibleLabel(title=self.title, collapsed=True)
             await self.app.mount(self.output_widget)
 
-        if output_item.content:
-            if self.channel_type == IOTypeEnum.prompt_message:
-                self._accu = "\n".join(format_prompt(output_item.content))
-            else:
-                self._accu += str(output_item.content)
+        if content:
+            self.accumulated_content += str(content)
 
-        self.output_widget.update(self._accu)
-
-    def create_sub_channel(self, channel_type, title=""):
-        io_channel = self.__class__(self, channel_type, title)
-        return io_channel
+        self.output_widget.update(self.accumulated_content)

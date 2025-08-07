@@ -95,7 +95,7 @@ class ToolAdapter:
 
     @classmethod
     def parse_output(cls, result):
-        print(result)
+        return result
 
     @classmethod
     def generate_comand_from_tool(

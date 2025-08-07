@@ -1,4 +1,5 @@
 # The design and code are from: https://github.com/Aider-AI/aider/blob/main/aider/repomap.py
+import logging
 import math
 import os
 import shutil
@@ -19,6 +20,8 @@ from tree_sitter_language_pack import get_language, get_parser
 
 from arox.utils.io import read_text
 
+logger = logging.getLogger(__name__)
+
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)
 
@@ -34,6 +37,7 @@ class RepoMap:
 
     def __init__(
         self,
+        agent,
         map_tokens=1024,
         root=None,
         main_model=None,
@@ -43,6 +47,7 @@ class RepoMap:
         map_mul_no_files=8,
         refresh="auto",
     ):
+        self.agent = agent
         self.verbose = verbose
         self.refresh = refresh
 
@@ -68,14 +73,16 @@ class RepoMap:
         self.last_map = None
 
         if self.verbose:
-            print(f"RepoMap initialized with map_mul_no_files: {self.map_mul_no_files}")
+            logger.info(
+                f"RepoMap initialized with map_mul_no_files: {self.map_mul_no_files}"
+            )
 
     def token_count(self, text):
         len_text = len(text)
         est_tokens = len_text // 4
         return est_tokens
 
-    def get_repo_map(
+    async def get_repo_map(
         self,
         chat_files,
         other_files,
@@ -104,7 +111,7 @@ class RepoMap:
                 force_refresh,
             )
         except RecursionError:
-            print("Disabling repo map, git repo too large?")
+            await self.agent.io_channel.write("Disabling repo map, git repo too large?")
             self.max_map_tokens = 0
             return
 
@@ -113,7 +120,9 @@ class RepoMap:
 
         if self.verbose:
             num_tokens = self.token_count(files_listing)
-            print(f"Repo-map: {num_tokens / 1024:.1f} k-tokens")
+            await self.agent.io_channel.write(
+                f"Repo-map: {num_tokens / 1024:.1f} k-tokens"
+            )
 
         if chat_files:
             other = "other "
@@ -137,11 +146,13 @@ class RepoMap:
             # Just return the full fname.
             return fname
 
-    def tags_cache_error(self, original_error=None):
+    async def tags_cache_error(self, original_error=None):
         """Handle SQLite errors by trying to recreate cache, falling back to dict if needed"""
 
         if self.verbose and original_error:
-            print(f"WARNING: Tags cache error: {str(original_error)}")
+            await self.agent.io_channel.write(
+                f"WARNING: Tags cache error: {str(original_error)}"
+            )
 
         if isinstance(getattr(self, "TAGS_CACHE", None), dict):
             return
@@ -169,32 +180,34 @@ class RepoMap:
 
         except SQLITE_ERRORS as e:
             # If anything goes wrong, warn and fall back to dict
-            print(
+            await self.agent.io_channel.write(
                 "WARNING: "
                 f"Unable to use tags cache at {path}, falling back to memory cache"
             )
             if self.verbose:
-                print(f"WARNING: Cache recreation error: {str(e)}")
+                await self.agent.io_channel.write(
+                    f"WARNING: Cache recreation error: {str(e)}"
+                )
 
         self.TAGS_CACHE = dict()
 
-    def load_tags_cache(self):
+    async def load_tags_cache(self):
         path = Path(self.root) / self.TAGS_CACHE_DIR
         try:
             self.TAGS_CACHE = Cache(path)
         except SQLITE_ERRORS as e:
-            self.tags_cache_error(e)
+            await self.tags_cache_error(e)
 
     def save_tags_cache(self):
         pass
 
-    def get_mtime(self, fname):
+    async def get_mtime(self, fname):
         try:
             return os.path.getmtime(fname)
         except FileNotFoundError:
-            print(f"WARNING: File not found error: {fname}")
+            await self.agent.io_channel.write(f"WARNING: File not found error: {fname}")
 
-    def get_tags(self, fname, rel_fname):
+    async def get_tags(self, fname, rel_fname):
         # Check if the file is in the cache and if the modification time has not changed
         file_mtime = self.get_mtime(fname)
         if file_mtime is None:
@@ -204,14 +217,14 @@ class RepoMap:
         try:
             val = self.TAGS_CACHE.get(cache_key)  # Issue #1308
         except SQLITE_ERRORS as e:
-            self.tags_cache_error(e)
+            await self.tags_cache_error(e)
             val = self.TAGS_CACHE.get(cache_key)
 
         if val is not None and val.get("mtime") == file_mtime:
             try:
                 return self.TAGS_CACHE[cache_key]["data"]
             except SQLITE_ERRORS as e:
-                self.tags_cache_error(e)
+                await self.tags_cache_error(e)
                 return self.TAGS_CACHE[cache_key]["data"]
 
         # miss!
@@ -222,12 +235,12 @@ class RepoMap:
             self.TAGS_CACHE[cache_key] = {"mtime": file_mtime, "data": data}
             self.save_tags_cache()
         except SQLITE_ERRORS as e:
-            self.tags_cache_error(e)
+            await self.tags_cache_error(e)
             self.TAGS_CACHE[cache_key] = {"mtime": file_mtime, "data": data}
 
         return data
 
-    def get_tags_raw(self, fname, rel_fname):
+    async def get_tags_raw(self, fname, rel_fname):
         code = read_text(fname)
         if not code:
             return
@@ -242,7 +255,7 @@ class RepoMap:
             language = get_language(lang)
             parser = get_parser(lang)
         except Exception as err:
-            print(f"Skipping file {fname}: {err}")
+            await self.agent.io_channel.write(f"Skipping file {fname}: {err}")
             return
 
         query_scm = get_scm_fname(lang)
@@ -301,7 +314,7 @@ class RepoMap:
                 line=-1,
             )
 
-    def get_ranked_tags(
+    async def get_ranked_tags(
         self,
         chat_fnames,
         other_fnames,
@@ -329,11 +342,11 @@ class RepoMap:
         try:
             cache_size = len(self.TAGS_CACHE)
         except SQLITE_ERRORS as e:
-            self.tags_cache_error(e)
+            await self.tags_cache_error(e)
             cache_size = len(self.TAGS_CACHE)
 
         if len(fnames) - cache_size > 100:
-            print(
+            await self.agent.io_channel.write(
                 "Initial repo scan can be slow in larger repos, but only happens once."
             )
             fnames = tqdm(fnames, desc="Scanning repo")
@@ -343,7 +356,7 @@ class RepoMap:
 
         for fname in fnames:
             if self.verbose:
-                print(f"Processing {fname}")
+                await self.agent.io_channel.write(f"Processing {fname}")
             if progress and not showing_bar:
                 progress()
 
@@ -354,8 +367,12 @@ class RepoMap:
 
             if not file_ok:
                 if fname not in self.warned_files:
-                    print(f"WARNING: Repo-map can't include {fname}")
-                    print("Has it been deleted from the file system but not from git?")
+                    await self.agent.io_channel.write(
+                        f"WARNING: Repo-map can't include {fname}"
+                    )
+                    await self.agent.io_channel.write(
+                        "Has it been deleted from the file system but not from git?"
+                    )
                     self.warned_files.add(fname)
                 continue
 
@@ -369,7 +386,7 @@ class RepoMap:
             if rel_fname in mentioned_fnames:
                 personalization[rel_fname] = personalize
 
-            tags = list(self.get_tags(fname, rel_fname))
+            tags = list(await self.get_tags(fname, rel_fname))
             if tags is None:
                 continue
 
@@ -456,7 +473,6 @@ class RepoMap:
         )
 
         for (fname, ident), rank in ranked_definitions:
-            # print(f"{rank:.03f} {fname} {ident}")
             if fname in chat_rel_fnames:
                 continue
             ranked_tags += list(definitions.get((fname, ident), []))

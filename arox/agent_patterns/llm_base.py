@@ -83,8 +83,12 @@ class LLMBaseAgent:
         model_params = model_config.params
         self.model_params = utils.deep_merge(self.agent_model_params, model_params)
         self.provider_model = model_config.provider_model
-        print(f"Using model {self.provider_model} for {self.name}")
         return config
+
+    async def show_agent_info(self):
+        await self.io_channel.write(
+            f"Using model {self.provider_model} for {self.name}"
+        )
 
     def parse_configs(self):
         config_parser = self.config_parser
@@ -139,7 +143,7 @@ class LLMBaseAgent:
 
     async def step(self, input_content: str):
         await self._run_before_hooks(input_content)
-        self.state.add_user_input(input_content)
+        await self.state.add_user_input(input_content)
         self.model_params["stream"] = True
         await LLMClient(
             provider_model=self.provider_model, io_channel=self.io_channel

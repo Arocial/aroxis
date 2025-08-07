@@ -24,6 +24,7 @@ dependencies = [
     "pygments>=2.19.1",
     "tqdm>=4.67.1",
     "tree-sitter-language-pack>=0.7.3",
+    "textual>=5.0",
 ]
 [project.urls]
 Homepage = "https://github.com/Arocial/arox"
@@ -38,4 +39,5 @@ where = ["."]
 dev = [
     "pytest>=8.3.4",
     "pytest-asyncio>=1.0.0",
+    "textual-dev",
 ]

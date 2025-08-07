@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 from kissllm.client import State
-from kissllm.io import IOTypeEnum, OutputItem
+from kissllm.io import IOTypeEnum
 from kissllm.stream import CompletionStream
 
 from arox.utils import xml_wrap
@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class ChatFiles:
-    def __init__(self, workspace) -> None:
+    def __init__(self, agent, workspace) -> None:
+        self.agent = agent
         self._chat_files = []
         self._pending_files = []
         self.candidate_generator = None
@@ -46,11 +47,13 @@ class ChatFiles:
         if f not in self._pending_files:
             self._pending_files.append(f)
 
-    def remove(self, f: Path):
+    async def remove(self, f: Path):
         if f in self._chat_files:
             self._chat_files.remove(f)
         else:
-            print(f"{f} is not in chat file list, ignoring.")
+            await self.agent.io_channel.write(
+                f"{f} is not in chat file list, ignoring."
+            )
 
         if f in self._pending_files:
             self._pending_files.remove(f)
@@ -76,7 +79,7 @@ class ChatFiles:
             return []
         return self.candidate_generator()
 
-    def read_files(self):
+    async def read_files(self):
         file_content = ""
         fpaths = []
         if not self._chat_files:
@@ -94,7 +97,7 @@ class ChatFiles:
                         f"\n====FILE: {fname}====\n{content}\n\n{file_content}"
                     )
             except FileNotFoundError:
-                print(f"File not found: {p}")
+                await self.agent.io_channel.write(f"File not found: {p}")
                 continue
 
         self.clear_pending()
@@ -112,13 +115,13 @@ class SimpleState(State):
         self.agent = agent
         self.system_prompt = self.agent.system_prompt
         self.workspace = self.agent.workspace
-        self.chat_files = ChatFiles(self.workspace)
+        self.chat_files = ChatFiles(agent, self.workspace)
         self.reset()
 
-    def assemble_chat_files(self) -> tuple[str, list[Path]]:
-        return self.chat_files.read_files()
+    async def assemble_chat_files(self) -> tuple[str, list[Path]]:
+        return await self.chat_files.read_files()
 
-    def _get_message_items(self, user_input):
+    async def _get_message_items(self, user_input):
         items = []
         # TODO: replace message_meta with local_metadata in message
         messages_meta = self.message_meta
@@ -126,7 +129,7 @@ class SimpleState(State):
             items.append(("system", self.system_prompt))
             self.message_meta["system"] = True
         if self.chat_files.have_pending() or user_input:
-            file_contents, _ = self.assemble_chat_files()
+            file_contents, _ = await self.assemble_chat_files()
             items.append(("files", file_contents))
         if user_input:
             items.append(("user_instruction", user_input))
@@ -147,12 +150,12 @@ class SimpleState(State):
                 {"role": "user", "content": content, "local_metadata": {"type": typ}}
             )
 
-    def add_user_input(self, user_input: str):
-        return self._assemble_prompt(user_input)
+    async def add_user_input(self, user_input: str):
+        return await self._assemble_prompt(user_input)
 
-    def _assemble_prompt(self, user_input: str):
+    async def _assemble_prompt(self, user_input: str):
         messages = self._messages
-        items = self._get_message_items(user_input)
+        items = await self._get_message_items(user_input)
         has_new = bool(items)
         for item in items:
             if item[0] == "system":
@@ -186,16 +189,16 @@ class SimpleState(State):
     async def accumulate_response(self, response):
         if isinstance(response, CompletionStream):
             io_channel = self.agent.io_channel
-            channel = io_channel.create_sub_channel(IOTypeEnum.assistant)
+            channel = io_channel.create_sub_channel(IOTypeEnum.streaming_assistant)
             async for content in response.iter_content():
                 if not content:
                     continue
-                await channel.write(OutputItem(content=content))
+                await channel.write(content)
 
         return await super().accumulate_response(response)
 
     async def handle_response(self, response, stream):
         continu = await super().handle_response(response, stream)
-        new_content = self._assemble_prompt("")
+        new_content = await self._assemble_prompt("")
 
         return new_content and continu
