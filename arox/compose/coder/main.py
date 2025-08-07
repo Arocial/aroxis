@@ -117,7 +117,10 @@ class CoderComposer:
             sys.exit(0)
 
     async def run(self):
-        logger.debug("Starting coder agent")
+        await self.commit_agent.show_agent_info()
+        await self.diff_agent.show_agent_info()
+        await self.coder_agent.show_agent_info()
+
         await self.coder_agent.start()
 
 

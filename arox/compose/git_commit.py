@@ -123,6 +123,6 @@ if __name__ == "__main__":
     async def main():
         agent = GitCommitAgent("git_commit_agent", toml_parser)
         result = await agent.auto_commit_changes()
-        print(result)
+        agent.io_channel.write(result)
 
     asyncio.run(main())
