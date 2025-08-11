@@ -4,11 +4,10 @@ from enum import Enum
 
 from kissllm.io import IOChannel, IOTypeEnum
 from kissllm.utils import format_prompt
+from prompt_toolkit.history import FileHistory, History
 from textual import events
 from textual.app import App, ComposeResult
 from textual.widgets import Collapsible, Footer, Label, TextArea
-
-from arox.utils import user_input_generator as user_input_generator
 
 logger = logging.getLogger(__name__)
 
@@ -65,27 +64,120 @@ class UserInput(TextArea):
     BINDINGS = [
         ("ctrl+j", "submit", "Submit"),
         ("alt+enter", "submit", "Submit"),
+        ("up", "history_prev", "Previous History"),
+        ("down", "history_next", "Next History"),
+        ("ctrl+r", "history_search", "Search History"),
+        ("ctrl+g", "history_reset", "Reset History"),
     ]
 
-    def __init__(self, input_future, *args, **kwargs):
+    def __init__(
+        self,
+        input_future,
+        history: History = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.input_future = input_future
+        self.submit_history = history
+        self.history_index = -1  # -1 means no history active
+        self.history_search_text = ""
+        self.history_search_mode = False
 
     async def _on_key(self, event: events.Key) -> None:
+        continue_super = True
+
+        if self.history_search_mode:
+            continue_super = False
+            if not event.is_printable:
+                await self.history_search_exit()
+            else:
+                event.prevent_default()
+                self.history_search_text += event.character
+                await self.action_history_search()
+
         # Textual parses shift+enter this way.
         # One can use [tkrec](https://github.com/Textualize/textual-key-recorder/)
         # to see the keys result in textual app.
         if event.key == "enter" and event.character is None:
             event.prevent_default()
-            self.action_submit()
-        else:
+            await self.action_submit()
+            continue_super = False
+
+        if continue_super:
             return await super()._on_key(event)
 
-    def action_submit(self) -> None:
+    async def action_submit(self) -> None:
         """Submit the input."""
         user_input = self.text
+        if self.submit_history and user_input:
+            self.submit_history.append_string(user_input)
         if self.input_future and not self.input_future.done():
             self.input_future.set_result(user_input)
+
+    @property
+    async def loaded_history(self):
+        return [h async for h in self.submit_history.load()]
+
+    async def action_history_search(self):
+        """Search history matching current input."""
+        if not self.submit_history:
+            return
+
+        if not self.history_search_mode:
+            self.history_search_mode = True
+            self.history_search_text = self.text
+        history = await self.loaded_history
+        for i in range(self.history_index, len(history)):
+            if self.history_search_text.lower() in history[i].lower():
+                self.history_index = i
+                self.text = (
+                    f"(search-history) `{self.history_search_text}`: {history[i]}"
+                )
+                break
+        else:
+            self.text = f"(search-history) `{self.history_search_text}`: {history[self.history_index]}"
+
+    async def history_search_exit(self, find=True):
+        if self.history_search_mode:
+            self.text = (
+                (await self.loaded_history)[self.history_index]
+                if find
+                else self.history_search_text
+            )
+            self.history_index = -1
+            self.history_search_mode = False
+
+    async def action_history_reset(self):
+        """Reset history navigation state."""
+        if self.history_search_mode:
+            await self.history_search_exit(find=False)
+            self.text = self.history_search_text
+
+    async def action_history_prev(self):
+        """Navigate to previous history item."""
+        if not self.submit_history:
+            return
+
+        await self.history_search_exit()
+        history = await self.loaded_history
+        if self.history_index < len(history) - 1:
+            self.history_index += 1
+            self.text = history[self.history_index]
+
+    async def action_history_next(self):
+        """Navigate to next history item."""
+        if not self.submit_history:
+            return
+
+        await self.history_search_exit()
+        history = await self.loaded_history
+        if self.history_index > 0:
+            self.history_index -= 1
+            self.text = history[self.history_index]
+        elif self.history_index == 0:
+            self.history_index = -1
+            self.text = self.history_search_text
 
 
 class CollapsibleLabel(Collapsible):
@@ -114,7 +206,9 @@ class TextualIOChannel(IOChannel):
     async def read(self):
         while True:
             input_future = asyncio.get_running_loop().create_future()
-            input_widget = UserInput(input_future)
+            input_widget = UserInput(
+                input_future, history=FileHistory(f".arox.{self.title}.history")
+            )
             await self.app.mount(input_widget)
             input_widget.focus()
             user_input = await input_future
