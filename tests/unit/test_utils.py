@@ -39,7 +39,7 @@ def test_deep_merge_nested_structures():
 async def test_user_input_generator_quit():
     with create_pipe_input() as pipe_input:
         pipe_input.send_text("test1\n")
-        pipe_input.send_text("q\n")
+        pipe_input.send_text("\x04")  # EOF (Ctrl+D)
 
         gen = user_input_generator(
             input=pipe_input,

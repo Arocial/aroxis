@@ -125,9 +125,24 @@ class CoderComposer:
 
 
 def main():
-    from arox.compose.coder.ui import CoderTUI
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--ui",
+        choices=["tui", "textui"],
+        default="tui",
+        help="UI interface to use (tui or textui)",
+    )
+    args = parser.parse_args()
 
-    io_channel = CoderTUI()
+    if args.ui == "tui":
+        from arox.compose.coder.ui import CoderTUI
+
+        io_channel = CoderTUI()
+    else:
+        from arox.compose.coder.ui import CoderTextUI
+
+        io_channel = CoderTextUI("Coder")
+
     io_channel.run()
 
 

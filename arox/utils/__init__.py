@@ -47,12 +47,12 @@ async def user_input_generator(completer=None, input=None, output=None):
         input=input,
         output=output,
     )
-    while True:
-        user_input = await session.prompt_async("User (q/Q to quit): ")
-        if user_input in {"q", "Q"}:
-            print("AI: Byebye")
-            break
-        yield user_input
+    try:
+        while True:
+            user_input = await session.prompt_async("User (Ctrl+D to quit): ")
+            yield user_input
+    except EOFError:
+        pass
 
 
 def xml_wrap(contents: list[tuple[str, str]]) -> str:
