@@ -29,11 +29,11 @@ class CommandManager:
             await self.agent.io_channel.write(f"Command not found: {user_input}")
         return True
 
-    def get_completions(self, name: str, args: str, document):
+    def get_completions(self, name: str, args: str):
         command = self.command_map.get(name)
         if not command:
             return
-        yield from command.get_completions(name, args, document)
+        yield from command.get_completions(name, args)
 
     def command_names(self):
         return self.command_map.keys()

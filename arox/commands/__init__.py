@@ -4,6 +4,7 @@ import re
 
 import yaml
 from prompt_toolkit.completion import Completer, Completion
+from textual.widgets import TextArea
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,9 @@ class CommandCompleter(Completer):
         self.command_manager = manager
 
     def get_completions(self, document, complete_event):
-        text = document.text
+        yield from self._get_completions(document.text)
 
+    def _get_completions(self, text):
         name, args = parse_cmdline(text)
         if not name:
             return
@@ -39,7 +41,12 @@ class CommandCompleter(Completer):
                     )
             return
 
-        yield from self.command_manager.get_completions(name, args, document)
+        yield from self.command_manager.get_completions(name, args)
+
+    def textual_suggester(self, text_area: TextArea):
+        current_location = text_area.cursor_location
+        text = text_area.document.get_text_range((0, 0), current_location)
+        yield from self._get_completions(text)
 
 
 class Command:
@@ -58,7 +65,7 @@ class Command:
         """Execute command with given input"""
         raise NotImplementedError
 
-    def get_completions(self, name, args, document):
+    def get_completions(self, name, args):
         yield from []
 
 
@@ -85,7 +92,7 @@ class FileCommand(Command):
                 p = chat_files.normalize(f)
                 await chat_files.remove(p)
 
-    def get_completions(self, name, args, document):
+    def get_completions(self, name, args):
         # Parse the arguments to get the current word being completed
         if not args:
             current_word = ""

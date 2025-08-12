@@ -11,6 +11,9 @@ from arox.utils import user_input_generator
 class CoderTUI(TUIByIO):
     def on_mount(self) -> None:
         composer = CoderComposer(self)
+        self.input_suggester = CommandCompleter(
+            composer.coder_agent.command_manager
+        ).textual_suggester
         self.run_worker(composer.run, name="composer", exclusive=True)
 
 
