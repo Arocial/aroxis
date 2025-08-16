@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
+from kissllm.io import SimpleTextUI
 from prompt_toolkit.input import create_pipe_input
-from prompt_toolkit.output import DummyOutput
 
 from arox import agent_patterns, commands
 from arox.agent_patterns.chat import ChatAgent
@@ -19,19 +19,22 @@ async def test_rewrite_agent():
         override_configs={"workspace": str(current_dir)},
     )
     agent_patterns.init(toml_parser)
-    agent = ChatAgent("rewrite", toml_parser)
-
-    cmds = [commands.FileCommand(agent), commands.SaveCommand(agent)]
-    agent.register_commands(cmds)
-
     file_name = Path(__file__).parent / "test_sample.md"
     test_user_msg = [
-        f"/add {file_name}",
-        "Translate the content to Chinese.",
-        f"/save {file_name}.testres",
-        "q",
+        f"/add {file_name}\n",
+        "Translate the content to Chinese.\n",
+        f"/save {file_name}.testres\n",
+        "\x04",
     ]
     with create_pipe_input() as pipe_input:
+        text_ui = SimpleTextUI("rewrite", user_input_generator(input=pipe_input))
+        io_channel = text_ui.io_channel
+        agent = ChatAgent("rewrite", toml_parser, io_channel=io_channel)
+
+        cmds = [commands.FileCommand(agent), commands.SaveCommand(agent)]
+        agent.register_commands(cmds)
+        io_channel.input_generator = user_input_generator(input=pipe_input)
+
         for msg in test_user_msg:
-            pipe_input.send_text(msg + "\n")
-        await agent.start(user_input_generator(input=pipe_input, output=DummyOutput()))
+            pipe_input.send_text(msg)
+        await agent.start()

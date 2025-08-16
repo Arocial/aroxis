@@ -137,13 +137,13 @@ def main():
     if args.ui == "tui":
         from arox.compose.coder.ui import CoderTUI
 
-        io_channel = CoderTUI()
+        app = CoderTUI("Coder")
     else:
         from arox.compose.coder.ui import CoderTextUI
 
-        io_channel = CoderTextUI("Coder")
+        app = CoderTextUI("Coder")
 
-    io_channel.run()
+    app.run()
 
 
 if __name__ == "__main__":

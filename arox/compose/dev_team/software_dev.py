@@ -3,6 +3,8 @@ import asyncio
 import sys
 from pathlib import Path
 
+from kissllm.io import SimpleTextUI
+
 from arox import agent_patterns
 from arox.agent_patterns.chat import ChatAgent
 from arox.config import TomlConfigParser
@@ -23,8 +25,19 @@ class DevelopTeam:
         default_agent_config = Path(__file__).parent / "software_dev.toml"
         toml_parser = TomlConfigParser(config_files=[default_agent_config])
         agent_patterns.init(toml_parser)
-        self.prd_agent = ChatAgent("prd", toml_parser)
-        self.ux_agent = ChatAgent("ux", toml_parser)
+        text_ui = SimpleTextUI("rewrite", user_input_generator())
+        io_channel = text_ui.io_channel
+
+        self.prd_agent = ChatAgent(
+            "prd",
+            toml_parser,
+            io_channel=io_channel.create_sub_channel("prd"),
+        )
+        self.ux_agent = ChatAgent(
+            "ux",
+            toml_parser,
+            io_channel=io_channel.create_sub_channel("ux"),
+        )
 
         if args.dump_default_config:
             with open(args.dump_default_config, "w") as f:
@@ -32,9 +45,9 @@ class DevelopTeam:
             sys.exit(0)
 
     async def run(self):
-        await self.prd_agent.start(user_input_generator())
+        await self.prd_agent.start()
         print("PRD agent finished.")
-        await self.ux_agent.start(user_input_generator())
+        await self.ux_agent.start()
 
 
 def main():
@@ -42,4 +55,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main
+    main()
