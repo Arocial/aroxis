@@ -30,7 +30,7 @@ def _hack_textual_keys():
 _hack_textual_keys()
 
 
-class TUIByIO(App, IOChannel):
+class TUIByIO(App):
     BINDINGS = [
         ("c", "collapse_or_expand(True)", "Collapse All"),
         ("e", "collapse_or_expand(False)", "Expand All"),
@@ -54,8 +54,10 @@ class TUIByIO(App, IOChannel):
     }
     """
 
-    def __init__(self):
+    def __init__(self, app_name):
         self.input_suggester = None
+        self.app_name = app_name
+        self.io_channel = TextualIOChannel(self, app_name, title=app_name)
         super().__init__()
 
     def compose(self) -> ComposeResult:
@@ -64,14 +66,6 @@ class TUIByIO(App, IOChannel):
     def action_collapse_or_expand(self, collapse: bool) -> None:
         for child in self.walk_children(Collapsible):
             child.collapsed = collapse
-
-    def create_sub_channel(self, channel_type, title=""):
-        io_channel = TextualIOChannel(self, channel_type, title)
-        return io_channel
-
-    @property
-    def app(self):
-        return self
 
 
 class SuggestionPopup(ListView):
@@ -311,18 +305,11 @@ class CollapsibleLabel(Collapsible):
 
 
 class TextualIOChannel(IOChannel):
-    def __init__(self, parent, channel_type, title=""):
-        self.parent = parent
-        self.app = self.parent.app
+    def __init__(self, app, channel_type, title=""):
+        self.app = app
         self.output_widget = None
         self.channel_type = channel_type
-        title = title or (
-            str(channel_type.value)
-            if isinstance(channel_type, Enum)
-            else str(channel_type)
-        )
-        self.title = f"{self.parent.title}.{title}"
-        self._accu = ""
+        self.title = title
 
     async def read(self):
         while True:
@@ -349,24 +336,25 @@ class TextualIOChannel(IOChannel):
         await self.app.mount(output_widget)
 
     def create_sub_channel(self, channel_type, title=""):
+        if not title:
+            title = (
+                str(channel_type.value)
+                if isinstance(channel_type, Enum)
+                else str(channel_type)
+            )
+            title = f"{self.title}.{title}"
         if channel_type == IOTypeEnum.prompt_message:
-            return PromptMessageWidget(self, channel_type, title)
+            return PromptMessageWidget(self.app, channel_type, title)
         elif channel_type == IOTypeEnum.streaming_assistant:
-            return StreamingOutputWidget(self, channel_type, title)
+            return StreamingOutputWidget(self.app, channel_type, title)
 
-        return self.__class__(self, channel_type, title)
+        return self.__class__(self.app, channel_type, title)
 
 
 class PromptMessageWidget(IOChannel):
-    def __init__(self, parent, channel_type, title=""):
-        self.parent = parent
-        self.app = self.parent.app
-        title = title or (
-            str(channel_type.value)
-            if isinstance(channel_type, Enum)
-            else str(channel_type)
-        )
-        self.title = f"{self.parent.title}.{title}"
+    def __init__(self, app, channel_type, title=""):
+        self.app = app
+        self.title = title
 
     async def write(self, content, metadata=None):
         output_widget = CollapsibleLabel(
@@ -378,16 +366,10 @@ class PromptMessageWidget(IOChannel):
 
 
 class StreamingOutputWidget(IOChannel):
-    def __init__(self, parent, channel_type, title=""):
-        self.parent = parent
-        self.app = self.parent.app
+    def __init__(self, app, channel_type, title=""):
+        self.app = app
         self.output_widget = None
-        title = title or (
-            str(channel_type.value)
-            if isinstance(channel_type, Enum)
-            else str(channel_type)
-        )
-        self.title = f"{self.parent.title}.{title}"
+        self.title = title
         self.accumulated_content = ""
 
     async def write(self, content, metadata=None):

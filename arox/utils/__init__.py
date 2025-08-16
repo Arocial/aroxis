@@ -49,7 +49,7 @@ async def user_input_generator(completer=None, input=None, output=None):
     )
     try:
         while True:
-            user_input = await session.prompt_async("User (Ctrl+D to quit): ")
+            user_input = await session.prompt_async("\nUser (Ctrl+D to quit): ")
             yield user_input
     except EOFError:
         pass
