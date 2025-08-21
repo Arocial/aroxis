@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from enum import Enum
 from typing import Callable, Iterable, Optional
@@ -32,14 +33,20 @@ _hack_textual_keys()
 
 class TUIByIO(App):
     BINDINGS = [
+        ("f", "enable_follow", "Enable Follow Mode"),
+        ("f", "disable_follow", "Disable Follow Mode"),
         ("c", "collapse_or_expand(True)", "Collapse All"),
         ("e", "collapse_or_expand(False)", "Expand All"),
     ]
 
     CSS = """
+    Screen {
+        padding: 1 1 0 1;
+    }
     TextArea {
         width: 100%;
         height: auto;
+        border: none;
     }
     .wrapped {
         width: 100%;
@@ -47,10 +54,22 @@ class TUIByIO(App):
     SuggestionPopup {
         background: $panel;
         border: round $accent;
-        padding: 1 1;
+        padding: 0;
         width: auto;
+        height: auto;
         layer: popup;
         max-height: 10;
+    }
+    .input-container {
+        layout: horizontal;
+        width: 100%;
+        height: auto;
+        margin: 1 0;
+    }
+    .prompt-label {
+        width: auto;
+        color: $accent;
+        padding: 0 1 0 0;
     }
     """
 
@@ -58,7 +77,11 @@ class TUIByIO(App):
         self.input_suggester = None
         self.app_name = app_name
         self.io_channel = TextualIOChannel(self, app_name, title=app_name)
+        self.follow = True
         super().__init__()
+
+    def on_mount(self) -> None:
+        self.theme = "nord"
 
     def compose(self) -> ComposeResult:
         yield Footer()
@@ -66,6 +89,29 @@ class TUIByIO(App):
     def action_collapse_or_expand(self, collapse: bool) -> None:
         for child in self.walk_children(Collapsible):
             child.collapsed = collapse
+
+    def action_disable_follow(self):
+        self.follow = False
+        self.refresh_bindings()
+
+    def action_enable_follow(self):
+        self.follow = True
+        self.refresh_bindings()
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "enable_follow" and self.follow:
+            return False
+        elif action == "disable_follow" and not self.follow:
+            return False
+        return True
+
+    async def update_and_scroll(self, func, *args, **kwargs):
+        result = func(*args, **kwargs)
+        if inspect.isawaitable(result):
+            return await result
+
+        if self.follow:
+            self.call_later(self.screen.scroll_end)
 
 
 class SuggestionPopup(ListView):
@@ -97,7 +143,7 @@ class UserInput(TextArea):
         ("ctrl+r", "history_search", "Search History"),
         ("ctrl+g", "on_abort", "Abort"),
         ("escape", "on_abort", "Abort"),
-        ("tab", "accept_suggestion", "Accept Suggestion"),
+        ("tab", "on_down", "Accept Suggestion"),
     ]
 
     def __init__(
@@ -130,6 +176,14 @@ class UserInput(TextArea):
                 self.history_search_text += event.character
                 await self.action_history_search()
 
+        elif self.suggestions_visible:
+            if event.key == "enter":
+                continue_super = False
+                event.prevent_default()
+                await self.action_accept_suggestion()
+            elif event.key not in ("up", "down", "tab"):
+                await self.action_hide_suggestions()
+
         # Textual parses shift+enter this way.
         # One can use [tkrec](https://github.com/Textualize/textual-key-recorder/)
         # to see the keys result in textual app.
@@ -139,15 +193,14 @@ class UserInput(TextArea):
             continue_super = False
 
         if continue_super:
-            result = await super()._on_key(event)
-            # Update suggestions after text change if suggester is available
+            await super()._on_key(event)
             if event.is_printable and self.suggester:
                 await self.update_suggestions()
-            return result
 
     async def action_submit(self) -> None:
         """Submit the input."""
         user_input = self.text
+        await self.action_hide_suggestions()
         if self.submit_history and user_input:
             self.submit_history.append_string(user_input)
         if self.input_future and not self.input_future.done():
@@ -246,7 +299,8 @@ class UserInput(TextArea):
         if not suggestions:
             return
 
-        self.suggestion_popup = SuggestionPopup(suggestions)
+        # Too many suggestions slows the ui significantly.
+        self.suggestion_popup = SuggestionPopup(suggestions[:20])
 
         # Position popup intelligently
         cursor_offset = self.cursor_screen_offset
@@ -262,9 +316,9 @@ class UserInput(TextArea):
         x_pos = min(cursor_offset[0] + matched_len, terminal_size.width - popup_width)
 
         # Calculate y position (flip to above if below is not enough space)
-        if cursor_offset[1] + popup_height + 1 <= terminal_size.height:
+        if cursor_offset[1] + popup_height <= terminal_size.height:
             # Place below cursor
-            y_pos = cursor_offset[1] + 1
+            y_pos = cursor_offset[1]
         else:
             # Place above cursor
             y_pos = cursor_offset[1] - popup_height
@@ -314,26 +368,38 @@ class TextualIOChannel(IOChannel):
     async def read(self):
         while True:
             input_future = asyncio.get_running_loop().create_future()
+            from textual.containers import Container
+            from textual.widgets import Static
+
+            prompt_label = Static(f"{self.title} > ", classes="prompt-label")
+
             input_widget = UserInput(
                 input_future,
                 history=FileHistory(f".arox.{self.title}.history"),
                 suggester=self.app.input_suggester,
             )
-            await self.app.mount(input_widget)
+
+            input_container = Container(
+                prompt_label, input_widget, classes="input-container"
+            )
+
+            await self.app.mount(input_container)
             input_widget.focus()
             user_input = await input_future
-            await input_widget.remove()
+            await input_container.remove()
+
             collapsible = Collapsible(
                 Label(user_input, markup=False, classes="wrapped"),
                 collapsed=False,
                 title=f"{self.title}.User",
             )
-            await self.app.mount(collapsible)
+            await self.app.update_and_scroll(self.app.mount, collapsible)
             yield user_input
 
     async def write(self, content, metadata=None):
-        output_widget = Label(str(content))
-        await self.app.mount(output_widget)
+        output_content = f"{self.title}: {str(content)}"
+        output_widget = Label(output_content)
+        await self.app.update_and_scroll(self.app.mount, output_widget)
 
     def create_sub_channel(self, channel_type, title=""):
         if not title:
@@ -362,7 +428,8 @@ class PromptMessageWidget(IOChannel):
             title=self.title,
             collapsed=True,
         )
-        await self.app.mount(output_widget)
+        await self.app.update_and_scroll(self.app.mount, output_widget)
+        output_widget.focus()
 
 
 class StreamingOutputWidget(IOChannel):
@@ -375,9 +442,12 @@ class StreamingOutputWidget(IOChannel):
     async def write(self, content, metadata=None):
         if self.output_widget is None:
             self.output_widget = CollapsibleLabel(title=self.title, collapsed=True)
-            await self.app.mount(self.output_widget)
+            await self.app.update_and_scroll(self.app.mount, self.output_widget)
+            self.output_widget.focus()
 
         if content:
             self.accumulated_content += str(content)
 
-        self.output_widget.update(self.accumulated_content)
+        await self.app.update_and_scroll(
+            self.output_widget.update, self.accumulated_content
+        )
