@@ -1,0 +1,30 @@
+- action: write
+  content: what can I do for you?
+- action: create_sub_channel
+  type: streaming_assistant
+  title: AI response
+  actions:
+  - action: write
+    content: |
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+      Here's steps to impl your request.
+    stream_interval: 0.1
+- action: read
