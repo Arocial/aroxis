@@ -190,10 +190,7 @@ class SimpleState(State):
         if isinstance(response, CompletionStream):
             io_channel = self.agent.io_channel
             channel = io_channel.create_sub_channel(IOTypeEnum.streaming_assistant)
-            async for content in response.iter_content():
-                if not content:
-                    continue
-                await channel.write(content)
+            await channel.write(response.iter_content())
 
         return await super().accumulate_response(response)
 

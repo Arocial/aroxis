@@ -21,6 +21,13 @@ class IOGenerator:
         self.io_channel = io_channel
         self.skip_read = skip_read
 
+    async def stream_content(self, content, interval):
+        import asyncio
+
+        for i in range(0, len(content), 2):
+            yield content[i : i + 2]
+            await asyncio.sleep(interval)
+
     async def do_action(self, io_channel, io_actions):
         for io_action in io_actions:
             if io_action["action"] == "read":
@@ -34,11 +41,7 @@ class IOGenerator:
                 if interval == 0.0:
                     await io_channel.write(content)
                 else:
-                    import asyncio
-
-                    for i in range(0, len(content), 2):
-                        await io_channel.write(content[i : i + 2])
-                        await asyncio.sleep(interval)
+                    await io_channel.write(self.stream_content(content, interval))
             elif io_action["action"] == "create_sub_channel":
                 sub_channel = io_channel.create_sub_channel(
                     io_action["type"], io_action.get("title")

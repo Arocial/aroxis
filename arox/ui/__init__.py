@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Callable, Iterable, Optional
 
 from kissllm.io import IOChannel, IOTypeEnum
-from kissllm.utils import format_prompt
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.history import FileHistory, History
 from textual import events
@@ -417,19 +416,97 @@ class TextualIOChannel(IOChannel):
         return self.__class__(self.app, channel_type, title)
 
 
+def _process_xml_tags(content_str, title, app):
+    """Process content with XML tags and return appropriate widget."""
+    import re
+
+    # Regular expression to match XML-style tags
+    xml_tag_pattern = r"^<(\w+)([^>]*)>(.*?)</\1>"
+
+    # Find all XML tags and their content
+    matches = list(re.finditer(xml_tag_pattern, content_str, re.DOTALL | re.MULTILINE))
+
+    if matches:
+        # Process content with XML tags
+        sub_widgets = []
+
+        # Add content before the first tag if it exists
+        last_end = 0
+        for match in matches:
+            # Add content before this tag if it's not empty
+            pre_content = content_str[last_end : match.start()].strip()
+            if pre_content:
+                output_widget = CollapsibleLabel(
+                    pre_content,
+                    title=f"{title}.text",
+                    collapsed=True,
+                )
+                sub_widgets.append(output_widget)
+
+            # Extract tag name and content
+            tag_name = match.group(1)
+            tag_attrs = match.group(2).strip()
+            tag_content = match.group(3).strip()
+
+            # Create a title for the collapsible section
+            widget_title = f"{title}.{tag_name}"
+            if tag_attrs:
+                widget_title += f" {tag_attrs}"
+
+            output_widget = CollapsibleLabel(
+                tag_content,
+                title=widget_title,
+                collapsed=True,
+            )
+            sub_widgets.append(output_widget)
+
+            last_end = match.end()
+
+        # Add remaining content after the last tag if it exists
+        remaining_content = content_str[last_end:].strip()
+        if remaining_content:
+            output_widget = CollapsibleLabel(
+                remaining_content,
+                title=f"{title}.text",
+                collapsed=True,
+            )
+            sub_widgets.append(output_widget)
+
+        main_collapsible = Collapsible(
+            *sub_widgets,
+            title=title,
+            collapsed=False,
+        )
+
+        return main_collapsible
+    else:
+        # If no XML tags found, return a simple CollapsibleLabel
+        return CollapsibleLabel(
+            content_str,
+            title=title,
+            collapsed=True,
+        )
+
+
 class PromptMessageWidget(IOChannel):
     def __init__(self, app, channel_type, title=""):
         self.app = app
         self.title = title
 
     async def write(self, content, metadata=None):
-        output_widget = CollapsibleLabel(
-            "\n".join(format_prompt(content)),
-            title=self.title,
-            collapsed=True,
+        # Ensure content is a string
+        content_str = (
+            "\n".join([c.get("content", "") for c in content])
+            if isinstance(content, list)
+            else str(content)
         )
-        await self.app.update_and_scroll(self.app.mount, output_widget)
-        output_widget.focus()
+
+        # Process content with XML tags and get appropriate widget
+        widget = _process_xml_tags(content_str, self.title, self.app)
+
+        # Mount the widget
+        await self.app.update_and_scroll(self.app.mount, widget)
+        widget.focus()
 
 
 class StreamingOutputWidget(IOChannel):
@@ -439,15 +516,28 @@ class StreamingOutputWidget(IOChannel):
         self.title = title
         self.accumulated_content = ""
 
-    async def write(self, content, metadata=None):
+    async def write(self, content_generator, metadata=None):
         if self.output_widget is None:
-            self.output_widget = CollapsibleLabel(title=self.title, collapsed=True)
+            self.output_widget = CollapsibleLabel(title=self.title, collapsed=False)
             await self.app.update_and_scroll(self.app.mount, self.output_widget)
             self.output_widget.focus()
 
-        if content:
-            self.accumulated_content += str(content)
+        async for content in content_generator:
+            if content:
+                self.accumulated_content += str(content)
 
-        await self.app.update_and_scroll(
-            self.output_widget.update, self.accumulated_content
-        )
+            await self.app.update_and_scroll(
+                self.output_widget.update, self.accumulated_content
+            )
+
+        # Process content with XML tags and get appropriate widget
+        widget = _process_xml_tags(self.accumulated_content, self.title, self.app)
+
+        # If we already have an output widget, remove it before adding the new one
+        if self.output_widget:
+            await self.output_widget.remove()
+
+        # Update the output widget reference and mount
+        self.output_widget = widget
+        await self.app.update_and_scroll(self.app.mount, self.output_widget)
+        self.output_widget.focus()
