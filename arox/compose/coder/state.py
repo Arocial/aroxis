@@ -23,13 +23,6 @@ class CoderState(SimpleState):
             insert_index = 1
         else:
             insert_index = 0
-        if self.agent.agent_config.get("repo_map") and not self.message_meta.get(
-            "repo_map"
-        ):
-            chat_files = self.chat_files.list()
-            repo_map = await self.project_manager.get_repo_map(chat_files)
-            items.insert(insert_index, ("repo_map", repo_map))
-            self.message_meta["repo_map"] = True
         if not self.message_meta.get("file_list"):
             file_list = "\n".join(self.project_manager.get_tracked_files())
             items.insert(insert_index, ("file_list", file_list))
