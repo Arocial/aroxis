@@ -3,10 +3,7 @@ import uuid
 from pathlib import Path
 
 from kissllm.client import LLMClient
-from kissllm.mcp import (
-    SSEMCPConfig,
-    StdioMCPConfig,
-)
+from kissllm.mcp import parse_mcp_config
 from kissllm.mcp.manager import MCPManager
 from kissllm.tools import ToolManager
 
@@ -44,19 +41,7 @@ class LLMBaseAgent:
         if self.mcp_servers:
             mcp_configs = []
             for server_name, server_conf_dict in self.mcp_servers.items():
-                if "command" in server_conf_dict:
-                    mcp_configs.append(
-                        StdioMCPConfig(name=server_name, **server_conf_dict)
-                    )
-                elif "url" in server_conf_dict:
-                    mcp_configs.append(
-                        SSEMCPConfig(name=server_name, **server_conf_dict)
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping MCP server '{server_name}': Configuration must contain 'command' (for stdio) or 'url' (for sse)."
-                    )
-                    continue
+                mcp_configs.append(parse_mcp_config(server_name, server_conf_dict))
             tool_managers["mcp_manager"] = MCPManager(mcp_configs)
         if local_tool_manager:
             tool_managers["local_manager"] = local_tool_manager

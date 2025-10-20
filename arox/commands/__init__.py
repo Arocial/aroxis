@@ -231,7 +231,7 @@ class ListToolCommand(Command):
 
     async def execute(self, name: str, arg: str):
         tool_registry = self.agent.tool_registry
-        tool_specs = tool_registry.get_tools_specs()
+        tool_specs = await tool_registry.get_tools_specs()
         if not tool_specs:
             await self.agent.io_channel.write("No tools registered.")
             return

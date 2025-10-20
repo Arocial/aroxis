@@ -177,7 +177,7 @@ class SimpleState(State):
                 break
 
         if self.use_flexible_toolcall:
-            self.inject_tools_into_messages()
+            await self.inject_tools_into_messages()
 
         return has_new
 
